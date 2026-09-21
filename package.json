@@ -1,0 +1,16 @@
+{
+  "name": "dogumgunusetim",
+  "private": true,
+  "description": "Temalı doğum günü parti seti e-ticaret sitesi",
+  "scripts": {
+    "postinstall": "npm install --prefix server && npm install --prefix client",
+    "dev": "concurrently -n server,client -c cyan,magenta \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "seed": "npm run seed --prefix server",
+    "studio": "npm run studio --prefix server",
+    "migrate": "npm run migrate --prefix server",
+    "import:theme": "npm run import:theme --prefix server --"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

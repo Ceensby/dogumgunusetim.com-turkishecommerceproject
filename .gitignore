@@ -1,0 +1,15 @@
+node_modules
+dist
+.env
+*.db
+*.db-journal
+server/uploads/*
+!server/uploads/.gitkeep
+.DS_Store
+Thumbs.db
+*.log
+.vscode
+.idea
+client/dist
+server/prisma/dev.db
+server/prisma/dev.db-journal

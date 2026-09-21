@@ -1,0 +1,270 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// PostgreSQL'e geçiş: provider = "postgresql" yazman yeterli.
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Theme {
+  id               Int      @id @default(autoincrement())
+  slug             String   @unique
+  name             String
+  title            String
+  description      String?
+  shortDescription String?
+  heroImage        String?
+  heroAspectRatio  String?
+  thumbnail        String?
+  primaryColor     String?
+  secondaryColor   String?
+  gender           String?
+  ageGroup         String?
+  tags             String?
+  isActive         Boolean  @default(true)
+  isFeatured       Boolean  @default(false)
+  sortOrder        Int      @default(0)
+  seoTitle         String?
+  seoDescription   String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  images        ThemeImage[]
+  themeProducts ThemeProduct[]
+  products      Product[]      @relation("ProductPrimaryTheme")
+  cartItems     CartItem[]
+}
+
+model ThemeImage {
+  id        Int     @id @default(autoincrement())
+  themeId   Int
+  url       String
+  alt       String?
+  sortOrder Int     @default(0)
+  isPrimary Boolean @default(false)
+
+  theme Theme @relation(fields: [themeId], references: [id], onDelete: Cascade)
+
+  @@index([themeId])
+}
+
+model Category {
+  id          Int     @id @default(autoincrement())
+  slug        String  @unique
+  name        String
+  pluralName  String?
+  iconName    String?
+  unitLabel   String?
+  sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)
+  description String?
+
+  products Product[]
+}
+
+model Color {
+  id        Int     @id @default(autoincrement())
+  slug      String  @unique
+  name      String
+  hexCode   String
+  sortOrder Int     @default(0)
+  isActive  Boolean @default(true)
+
+  products Product[]
+}
+
+model Product {
+  id             Int      @id @default(autoincrement())
+  sku            String   @unique
+  slug           String   @unique
+  name           String
+  description    String?
+  themeId        Int?
+  categoryId     Int
+  colorId        Int?
+  price          Decimal
+  compareAtPrice Decimal?
+  taxRate        Int      @default(20)
+  packSize       Int      @default(1)
+  unitLabel      String   @default("adet")
+  stock          Int      @default(0)
+  trackStock     Boolean  @default(true)
+  barcode        String?
+  weightGrams    Int?
+  isActive       Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  seoTitle       String?
+  seoDescription String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  theme         Theme?         @relation("ProductPrimaryTheme", fields: [themeId], references: [id], onDelete: SetNull)
+  category      Category       @relation(fields: [categoryId], references: [id])
+  color         Color?         @relation(fields: [colorId], references: [id], onDelete: SetNull)
+  images        ProductImage[]
+  attributes    ProductAttribute[]
+  themeProducts ThemeProduct[]
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+
+  @@index([categoryId])
+  @@index([colorId])
+  @@index([themeId])
+  @@index([isActive])
+}
+
+model ProductImage {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  url       String
+  alt       String?
+  sortOrder Int     @default(0)
+  isPrimary Boolean @default(false)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model ProductAttribute {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  label     String
+  value     String
+  sortOrder Int     @default(0)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model ThemeProduct {
+  themeId         Int
+  productId       Int
+  sortOrder       Int     @default(0)
+  defaultQuantity Int     @default(0)
+  isRequired      Boolean @default(false)
+  isRecommended   Boolean @default(false)
+
+  theme   Theme   @relation(fields: [themeId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([themeId, productId])
+  @@index([themeId, sortOrder])
+}
+
+model Cart {
+  id        Int      @id @default(autoincrement())
+  sessionId String   @unique
+  userId    Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items CartItem[]
+}
+
+model CartItem {
+  id                Int      @id @default(autoincrement())
+  cartId            Int
+  productId         Int
+  quantity          Int
+  unitPriceSnapshot Decimal
+  themeId           Int?
+  setGroupId        String?
+  setName           String?
+  addedAt           DateTime @default(now())
+
+  cart    Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product  @relation(fields: [productId], references: [id])
+  theme   Theme?   @relation(fields: [themeId], references: [id], onDelete: SetNull)
+
+  @@index([cartId])
+  @@index([setGroupId])
+}
+
+model Customer {
+  id        Int      @id @default(autoincrement())
+  email     String
+  name      String
+  phone     String?
+  createdAt DateTime @default(now())
+
+  addresses Address[]
+  orders    Order[]
+
+  @@index([email])
+}
+
+model Address {
+  id          Int     @id @default(autoincrement())
+  customerId  Int
+  title       String?
+  fullName    String
+  phone       String
+  city        String
+  district    String
+  addressLine String
+  postalCode  String?
+  isDefault   Boolean @default(false)
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  orders   Order[]
+}
+
+model Order {
+  id          Int      @id @default(autoincrement())
+  orderNumber String   @unique
+  customerId  Int
+  addressId   Int?
+  status      String   @default("pending")
+  subtotal    Decimal
+  shippingFee Decimal
+  discount    Decimal  @default(0)
+  total       Decimal
+  couponCode  String?
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  customer Customer    @relation(fields: [customerId], references: [id])
+  address  Address?    @relation(fields: [addressId], references: [id])
+  items    OrderItem[]
+
+  @@index([orderNumber])
+  @@index([status])
+}
+
+model OrderItem {
+  id          Int     @id @default(autoincrement())
+  orderId     Int
+  productId   Int
+  quantity    Int
+  unitPrice   Decimal
+  total       Decimal
+  setGroupId  String?
+  setName     String?
+  productName String
+  productSku  String
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([setGroupId])
+}
+
+model AdminUser {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("admin")
+  createdAt    DateTime @default(now())
+}
+
+model SiteSetting {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value String
+}
