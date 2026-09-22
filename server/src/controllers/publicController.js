@@ -75,9 +75,23 @@ export async function listColors(_req, res, next) {
   try {
     const items = await prisma.color.findMany({
       where: { isActive: true },
+      include: {
+        _count: { select: { products: { where: { isActive: true } } } },
+      },
       orderBy: { sortOrder: 'asc' },
     });
-    return ok(res, serialize(items));
+    const mapped = items
+      .map((c) => {
+        const { _count, ...rest } = c;
+        return { ...rest, productCount: _count?.products ?? 0 };
+      })
+      .sort((a, b) => {
+        const aHas = a.productCount > 0 ? 0 : 1;
+        const bHas = b.productCount > 0 ? 0 : 1;
+        if (aHas !== bHas) return aHas - bHas;
+        return a.sortOrder - b.sortOrder;
+      });
+    return ok(res, serialize(mapped));
   } catch (error) {
     next(error);
   }

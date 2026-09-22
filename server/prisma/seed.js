@@ -3,7 +3,8 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
-import { defaultAttributes } from '../src/utils/productAttributes.js';
+import { defaultAttributes, plainProductAttributes } from '../src/utils/productAttributes.js';
+import { seedColorRows } from '../src/utils/plainColors.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,16 +28,7 @@ const CATEGORIES = [
   { slug: 'mum', name: 'Mum', pluralName: 'Mumlar', iconName: 'Cake', unitLabel: 'adet', sortOrder: 12, description: 'Pasta mumları' },
 ];
 
-const COLORS = [
-  { slug: 'pembe', name: 'Pembe', hexCode: '#FF6FA5', sortOrder: 1 },
-  { slug: 'mavi', name: 'Mavi', hexCode: '#4DA8FF', sortOrder: 2 },
-  { slug: 'beyaz', name: 'Beyaz', hexCode: '#FFFFFF', sortOrder: 3 },
-  { slug: 'altin', name: 'Altın', hexCode: '#E5B94E', sortOrder: 4 },
-  { slug: 'lila', name: 'Lila', hexCode: '#C77DFF', sortOrder: 5 },
-  { slug: 'mint', name: 'Mint', hexCode: '#7BE0C0', sortOrder: 6 },
-  { slug: 'kirmizi', name: 'Kırmızı', hexCode: '#F0483E', sortOrder: 7 },
-  { slug: 'siyah', name: 'Siyah', hexCode: '#1F1B2E', sortOrder: 8 },
-];
+const COLORS = seedColorRows();
 
 const SETTINGS = {
   site_name: 'doğumgünüsetim',
@@ -306,8 +298,7 @@ async function upsertUnicorn(categories, colors) {
       isRequired: false,
       isRecommended: false,
       sortOrder: 6,
-      imageDir: null,
-      extraImages: [],
+      imageUrls: ['/images/products/pembe-fon-perdesi.svg'],
     },
     {
       sku: 'UNI-MOR-01',
@@ -345,8 +336,8 @@ async function upsertUnicorn(categories, colors) {
       isRequired: false,
       isRecommended: false,
       sortOrder: 8,
-      imageDir: null,
-      extraImages: [],
+      imageDir: 'duz-renk/pembe',
+      extraImages: ['pembe-renk-plastik-catal-25li-2'],
     },
     {
       sku: 'GEN-BCK-PMB-25',
@@ -389,13 +380,23 @@ async function upsertUnicorn(categories, colors) {
     });
 
     const cat = Object.values(categories).find((c) => c.id === data.categoryId);
+    const colorName = data.colorId
+      ? Object.values(colors).find((c) => c.id === data.colorId)?.name
+      : null;
     await prisma.productAttribute.deleteMany({ where: { productId: product.id } });
     await prisma.productAttribute.createMany({
       data: [
-        ...defaultAttributes(
-          { packSize: data.packSize, category: { slug: cat?.slug } },
-          theme.name,
-        ),
+        ...(colorName
+          ? plainProductAttributes({
+              packSize: data.packSize,
+              packKnown: true,
+              categorySlug: cat?.slug,
+              colorName,
+            })
+          : defaultAttributes(
+              { packSize: data.packSize, category: { slug: cat?.slug } },
+              theme.name,
+            )),
         ...(extraAttributes || []),
       ].map((a) => ({ ...a, productId: product.id })),
     });
@@ -443,6 +444,88 @@ async function upsertUnicorn(categories, colors) {
   return theme;
 }
 
+function duzUrls(colorSlug, slug, extra = 0) {
+  const names = [slug, ...Array.from({ length: extra }, (_, i) => `${slug}-${i + 2}`)];
+  return names.map((name) => `/images/products/duz-renk/${colorSlug}/${name}.webp`);
+}
+
+async function upsertPlainCatalog(categories, colors) {
+  const rows = [
+    { sku: 'GEN-FON-ALT-01', slug: 'altin-metalik-fon-perdesi', name: 'Altın Metalik Fon Perdesi', color: 'altin', category: 'fon-perdesi', price: 119, packSize: 1, unitLabel: 'adet', packKnown: true, extra: 1 },
+    { sku: 'GEN-FON-GMS-01', slug: 'gumus-metalik-fon-perdesi', name: 'Gümüş Metalik Fon Perdesi', color: 'gumus', category: 'fon-perdesi', price: 119, packSize: 1, unitLabel: 'adet', packKnown: true, extra: 1 },
+    { sku: 'GEN-FON-KRM-01', slug: 'kirmizi-fon-perdesi', name: 'Kırmızı Fon Perdesi', color: 'kirmizi', category: 'fon-perdesi', price: 119, packSize: 1, unitLabel: 'adet', packKnown: true, extra: 1 },
+    { sku: 'GEN-FON-SYH-01', slug: 'siyah-mat-fon-perdesi', name: 'Siyah Mat Fon Perdesi', color: 'siyah', category: 'fon-perdesi', price: 119, packSize: 1, unitLabel: 'adet', packKnown: true, extra: 1 },
+    { sku: 'GEN-FON-MOR-01', slug: 'mor-fon-perdesi', name: 'Mor Fon Perdesi', color: 'mor', category: 'fon-perdesi', price: 119, packSize: 1, unitLabel: 'adet', packKnown: true, extra: 1 },
+    { sku: 'GEN-FON-YSL-01', slug: 'yesil-fon-perdesi', name: 'Yeşil Fon Perdesi', color: 'yesil', category: 'fon-perdesi', price: 119, packSize: 1, unitLabel: 'adet', packKnown: true, extra: 1 },
+    { sku: 'GEN-FON-GKK-01', slug: 'gokkusagi-fon-perdesi', name: 'Gökkuşağı Fon Perdesi', color: 'gokkusagi', category: 'fon-perdesi', price: 119, packSize: 1, unitLabel: 'adet', packKnown: true, extra: 1 },
+    { sku: 'GEN-FON-MAV-01', slug: 'mavi-fon-perdesi', name: 'Mavi Fon Perdesi', color: 'mavi', category: 'fon-perdesi', price: 119, packSize: 1, unitLabel: 'adet', packKnown: true, extra: 1 },
+    { sku: 'GEN-FON-RSG-01', slug: 'rose-gold-fon-perdesi', name: 'Rose Gold Fon Perdesi', color: 'rose-gold', category: 'fon-perdesi', price: 119, packSize: 1, unitLabel: 'adet', packKnown: true, extra: 1 },
+    { sku: 'GEN-CTL-MAV-25', slug: 'mavi-plastik-catal-25li', name: 'Mavi Plastik Çatal', color: 'mavi', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: 'paket', packKnown: false, extra: 1 },
+    { sku: 'GEN-CTL-SAR-25', slug: 'sari-plastik-catal-25li', name: 'Sarı Plastik Çatal', color: 'sari', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: "25'li paket", packKnown: true, extra: 1 },
+    { sku: 'GEN-CTL-SYH-25', slug: 'siyah-plastik-catal-25li', name: 'Siyah Plastik Çatal', color: 'siyah', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: "25'li paket", packKnown: true, extra: 0 },
+    { sku: 'GEN-CTL-SYH-10', slug: 'siyah-plastik-catal-10li', name: 'Siyah Plastik Çatal', color: 'siyah', category: 'plastik-catal', price: 79, packSize: 10, unitLabel: "10'lu paket", packKnown: true, extra: 0 },
+    { sku: 'GEN-CTL-GMS-25', slug: 'gumus-plastik-catal-25li', name: 'Gümüş Plastik Çatal', color: 'gumus', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: 'paket', packKnown: false, extra: 0 },
+    { sku: 'GEN-CTL-YSL-25', slug: 'yesil-plastik-catal-25li', name: 'Yeşil Plastik Çatal', color: 'yesil', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: 'paket', packKnown: false, extra: 1 },
+    { sku: 'GEN-CTL-TRN-25', slug: 'turuncu-plastik-catal-25li', name: 'Turuncu Plastik Çatal', color: 'turuncu', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: 'paket', packKnown: false, extra: 1 },
+    { sku: 'GEN-CTL-LIL-25', slug: 'lila-plastik-catal-25li', name: 'Lila Plastik Çatal', color: 'lila', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: 'paket', packKnown: false, extra: 1 },
+    { sku: 'GEN-CTL-KRE-25', slug: 'krem-plastik-catal-25li', name: 'Krem Plastik Çatal', color: 'krem', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: 'paket', packKnown: false, extra: 1 },
+    { sku: 'GEN-CTL-GRI-25', slug: 'gri-plastik-catal-25li', name: 'Gri Plastik Çatal', color: 'gri', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: 'paket', packKnown: false, extra: 0 },
+    { sku: 'GEN-CTL-KRM-25', slug: 'kirmizi-plastik-catal-25li', name: 'Kırmızı Plastik Çatal', color: 'kirmizi', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: 'paket', packKnown: false, extra: 1 },
+    { sku: 'GEN-CTL-ALT-25', slug: 'altin-plastik-catal-25li', name: 'Altın Plastik Çatal', color: 'altin', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: 'paket', packKnown: false, extra: 1 },
+  ];
+
+  for (const row of rows) {
+    const color = colors[row.color];
+    const category = categories[row.category];
+    if (!color || !category) {
+      console.warn(`[seed] düz renk atlandı: ${row.sku} (renk veya kategori yok)`);
+      continue;
+    }
+    const data = {
+      sku: row.sku,
+      slug: row.slug,
+      name: row.name,
+      description: `${row.name}. Birden fazla temada kullanılabilir.`,
+      themeId: null,
+      categoryId: category.id,
+      colorId: color.id,
+      price: row.price,
+      packSize: row.packSize,
+      unitLabel: row.unitLabel,
+      stock: 100,
+      isActive: true,
+      sortOrder: 40 + (color.sortOrder || 0),
+    };
+    const product = await prisma.product.upsert({
+      where: { sku: data.sku },
+      update: data,
+      create: data,
+    });
+
+    await prisma.productAttribute.deleteMany({ where: { productId: product.id } });
+    await prisma.productAttribute.createMany({
+      data: plainProductAttributes({
+        packSize: row.packSize,
+        packKnown: row.packKnown,
+        categorySlug: row.category,
+        colorName: color.name,
+      }).map((a) => ({ ...a, productId: product.id })),
+    });
+
+    const images = duzUrls(color.slug, row.slug, row.extra);
+    await prisma.productImage.deleteMany({ where: { productId: product.id } });
+    await prisma.productImage.createMany({
+      data: images.map((url, i) => ({
+        productId: product.id,
+        url,
+        alt: product.name,
+        sortOrder: i,
+        isPrimary: i === 0,
+      })),
+    });
+  }
+}
+
 async function syncCarts() {
   const yazi = await prisma.product.findUnique({ where: { sku: 'UNI-YZI-01' } });
   if (yazi) {
@@ -466,8 +549,9 @@ async function main() {
   await upsertSettings();
   await upsertAdmin();
   await upsertUnicorn(categories, colors);
+  await upsertPlainCatalog(categories, colors);
   await syncCarts();
-  console.log('[seed] tamamlandı — Unicorn teması, yeni kategoriler ve ürünler hazır');
+  console.log('[seed] tamamlandı — Unicorn teması, düz renk ürünleri ve kategoriler hazır');
 }
 
 main()

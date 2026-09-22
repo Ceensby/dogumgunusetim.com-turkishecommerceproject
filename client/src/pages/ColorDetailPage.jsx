@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { Container, Grid, Typography } from '@mui/material';
 import { fetchColor } from '../api/catalog';
+import { useQuery } from '@tanstack/react-query';
 import ProductCard from '../components/product/ProductCard';
 import SeoHead from '../components/common/SeoHead';
 import EmptyState from '../components/common/EmptyState';
@@ -9,9 +10,29 @@ import ErrorState from '../components/common/ErrorState';
 
 export default function ColorDetailPage() {
   const { slug } = useParams();
-  const query = useQuery({ queryKey: ['color', slug], queryFn: () => fetchColor(slug) });
+  const query = useQuery({
+    queryKey: ['color', slug],
+    queryFn: () => fetchColor(slug, { limit: 48 }),
+  });
   const items = query.data?.items || [];
   const color = query.data?.color;
+
+  const groups = useMemo(() => {
+    const map = new Map();
+    for (const p of items) {
+      const key = p.category?.slug || 'diger';
+      if (!map.has(key)) {
+        map.set(key, {
+          slug: key,
+          title: p.category?.pluralName || p.category?.name || 'Diğer',
+          sortOrder: p.category?.sortOrder ?? 99,
+          items: [],
+        });
+      }
+      map.get(key).items.push(p);
+    }
+    return [...map.values()].sort((a, b) => a.sortOrder - b.sortOrder);
+  }, [items]);
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -21,13 +42,20 @@ export default function ColorDetailPage() {
       </Typography>
       {query.isError && <ErrorState onRetry={query.refetch} />}
       {!query.isLoading && items.length === 0 && <EmptyState title="Bu renkte ürün yok" />}
-      <Grid container spacing={2}>
-        {items.map((p) => (
-          <Grid item xs={6} md={3} key={p.id}>
-            <ProductCard product={p} />
+      {groups.map((group) => (
+        <div key={group.slug}>
+          <Typography variant="h5" sx={{ mb: 2, mt: 1 }}>
+            {group.title}
+          </Typography>
+          <Grid container spacing={2} sx={{ mb: 4 }}>
+            {group.items.map((p) => (
+              <Grid item xs={6} md={3} key={p.id}>
+                <ProductCard product={p} />
+              </Grid>
+            ))}
           </Grid>
-        ))}
-      </Grid>
+        </div>
+      ))}
     </Container>
   );
 }

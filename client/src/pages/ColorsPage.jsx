@@ -34,6 +34,9 @@ export default function ColorsPage() {
               }}
             />
             <Typography>{c.name}</Typography>
+            <Typography variant="caption" color="text.secondary">
+              {c.productCount ? `${c.productCount} ürün` : 'Ürün yok'}
+            </Typography>
           </Box>
         ))}
       </Stack>

@@ -8,7 +8,8 @@
     "seed": "npm run seed --prefix server",
     "studio": "npm run studio --prefix server",
     "migrate": "npm run migrate --prefix server",
-    "import:theme": "npm run import:theme --prefix server --"
+    "import:theme": "npm run import:theme --prefix server --",
+    "import:plain": "npm run import:plain --prefix server --"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

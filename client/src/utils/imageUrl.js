@@ -1,9 +1,10 @@
 /**
- * WebP varyantları yalnızca import script'inin yazdığı
- * /images/products/<tema>/<slug>.webp dosyalarında vardır.
+ * WebP boyut varyantları import script'inin yazdığı
+ * /images/products/<klasör>/.../<file>.webp dosyalarında vardır
+ * (tema: unicorn/, düz renk: duz-renk/<renk>/).
  */
 export function hasSizeVariants(src) {
-  return typeof src === 'string' && /\/images\/products\/[^/]+\/[^/]+\.webp$/i.test(src);
+  return typeof src === 'string' && /\/images\/products\/.+\.webp$/i.test(src);
 }
 
 export function sizedImageUrl(src, size = 'lg') {

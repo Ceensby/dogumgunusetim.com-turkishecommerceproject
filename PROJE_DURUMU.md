@@ -51,7 +51,7 @@ Admin: http://localhost:5173/admin/giris
 
 PostgreSQL: `schema.prisma` içinde `provider = "postgresql"` + `DATABASE_URL`.
 
-Kök scriptler: `dev`, `seed`, `studio`, `migrate`, `import:theme`.
+Kök scriptler: `dev`, `seed`, `studio`, `migrate`, `import:theme`, `import:plain`.
 
 ---
 
@@ -63,6 +63,7 @@ dogumgunusetim.com/
     public/images/
       products/                   ürün görselleri (jpg/svg yer tutucu veya unicorn/*.webp)
       products/unicorn/           import edilmiş Unicorn ürün WebP’leri
+      products/duz-renk/<renk>/   düz renk ürün WebP’leri (1200 / -md 600 / -sm 200)
       themes/unicorn/             hero.webp, hero-mobile.webp (kullanılmıyor), thumb.webp
     src/
       api/                        axios sarmalayıcılar (catalog, cart, admin, client)
@@ -75,7 +76,7 @@ dogumgunusetim.com/
       hooks/useSetBuilder.js      sessionStorage + URL setGroupId
       store/cartStore.js          sepet Zustand
       pages/                      mağaza + admin sayfaları
-      utils/imageUrl.js           yalnızca /images/products/<tema>/<file>.webp için -sm/-md
+      utils/imageUrl.js           /images/products/**/*.webp için -sm/-md (tema ve duz-renk)
   server/
     prisma/schema.prisma
     prisma/seed.js                Unicorn + kategoriler + renkler + admin
@@ -86,6 +87,7 @@ dogumgunusetim.com/
       controllers/themeController.js  groupedProducts (boş kategori yok)
       services/cartService.js     set grubu + tekil satır; unitPriceSnapshot
   dgtemalar/                      orijinal Unicorn fotoğraflar (silinmez)
+  Parti malzemeleri/              düz renk orijinalleri (silinmez; import okur)
   PROJE_DURUMU.md                 bu dosya
 ```
 
@@ -95,6 +97,9 @@ dogumgunusetim.com/
 |---|---|
 | `server/src/utils/parseThemeImage.js` | Import dosya adı kuralları (iyiki doğdun → flama) |
 | `server/scripts/importThemeImages.js` | sharp WebP, upsert Product/Theme, kolaj hero |
+| `server/scripts/importPlainProducts.js` | düz renk upsert: `themeId` null, `colorId` dolu, ThemeProduct yok |
+| `server/src/utils/parsePlainImage.js` | dosya adı / eşleme / görselden renk |
+| `server/src/utils/plainColors.js` | renk paleti, SKU kısaltmaları, kategori fiyatları |
 | `server/prisma/seed.js` | temiz kurulum verisi; sepet fiyat senkronu |
 | `client/src/hooks/useSetBuilder.js` | parti boyutu `ceil(kişiler / packSize)` |
 | `client/src/components/common/ImageWithFallback.jsx` | size sm/md/lg, jpg yoksa svg, hata yer tutucu |
@@ -165,7 +170,9 @@ Tema sayfasında **aktif ürünü olmayan kategori başlığı gösterilmez**. Y
 
 ### Renkler
 
-Pembe `#FF6FA5`, Mavi, Beyaz, Altın, Lila, Mint, Kırmızı, Siyah. Ürünü olan: **Pembe**.
+Pembe `#FF6FA5`, Mavi, Beyaz, Altın, Lila, Mint, Kırmızı, Siyah, **Gümüş** `#C0C5CA`, **Rose Gold** `#C98973`, **Mor** `#7A1FA2`, **Yeşil** `#22A34A`, **Gökkuşağı** `#FF7A62`, **Sarı** `#F5C400`, **Turuncu** `#FF8A1A`, **Krem** `#F0D9B5`, **Gri** `#9A9EA6`.
+
+Ürünü olanlar önce: Pembe (3), Mavi (2), Altın (2), Lila (1), Kırmızı (2), Siyah (3), Gümüş (2), Rose Gold, Mor, Yeşil (2), Gökkuşağı, Sarı, Turuncu, Krem, Gri. Ürünü olmayanlar sonda: Beyaz, Mint.
 
 ### Temalar
 
@@ -180,13 +187,51 @@ Yalnızca **Unicorn** (`/tema/unicorn`). Hero: `hero.webp` (masa banner, 1920×5
 | Unicorn Peçete | UNI-PCT-16 | Peçete | 16 | 75 | evet | Unicorn | — | evet | evet |
 | Unicorn Kürdan | UNI-KRD-10 | Kürdan | 10 | 45 | evet | Unicorn | — | evet | evet |
 | Unicorn Flama | UNI-FLM-01 | Flama | 1 | 59 | evet | Unicorn | — | evet | evet (iyi ki doğdun ana; yer tutucu 2.) |
-| Pembe Fon Perdesi | GEN-FON-PMB-01 | Fon Perdesi | 1 | 119 | evet | null | Pembe | evet | hayır |
+| Pembe Fon Perdesi | GEN-FON-PMB-01 | Fon Perdesi | 1 | 119 | evet | null | Pembe | evet | hayır (SVG) |
 | Unicorn Masa Örtüsü (120x180 cm) | UNI-MOR-01 | Masa Örtüsü | 1 | 75 | evet | Unicorn | — | evet | hayır |
-| Pembe Renk Plastik Çatal | GEN-CTL-PMB-25 | Plastik Çatal | 25 | 79 | evet | null | Pembe | evet | hayır |
+| Pembe Renk Plastik Çatal | GEN-CTL-PMB-25 | Plastik Çatal | 25 | 79 | evet | null | Pembe | evet | evet (2) |
 | Pembe Renk Plastik Bıçak | GEN-BCK-PMB-25 | Plastik Bıçak | 25 | 79 | evet | null | Pembe | evet | hayır |
 | Unicorn İyi ki Doğdun Yazısı | UNI-YZI-01 | Doğum Günü Yazısı | 1 | 99.9 | **hayır** | Unicorn | — | **yok** | görsel kaydı silindi |
 
 Fiyatlar TL, KDV dahil.
+
+### Düz renk — Fon Perdesi (themeId null, ThemeProduct yok; pembe hariç)
+
+Hepsi stok 100, fiyat **119 TL (varsayılan — kontrol et)**, pack 1, malzeme Folyo. 2 fotoğraf (WebP).
+
+| Ad | SKU | Renk |
+|---|---|---|
+| Altın Metalik Fon Perdesi | GEN-FON-ALT-01 | Altın |
+| Gümüş Metalik Fon Perdesi | GEN-FON-GMS-01 | Gümüş |
+| Kırmızı Fon Perdesi | GEN-FON-KRM-01 | Kırmızı |
+| Siyah Mat Fon Perdesi | GEN-FON-SYH-01 | Siyah |
+| Mor Fon Perdesi | GEN-FON-MOR-01 | Mor |
+| Yeşil Fon Perdesi | GEN-FON-YSL-01 | Yeşil |
+| Gökkuşağı Fon Perdesi | GEN-FON-GKK-01 | Gökkuşağı |
+| Mavi Fon Perdesi | GEN-FON-MAV-01 | Mavi |
+| Rose Gold Fon Perdesi | GEN-FON-RSG-01 | Rose Gold |
+
+Pembe Fon Perdesi (`GEN-FON-PMB-01`) Unicorn setine bağlı kalır; fotoğrafı yok, pembe hex SVG yer tutucu.
+
+### Düz renk — Plastik Çatal (themeId null; pembe hariç ThemeProduct yok)
+
+Fiyat **79 TL (varsayılan — kontrol et)**. Paket adedi dosyada yoksa 25 kabul edildi, özellikte yazılmaz.
+
+| Ad | SKU | Renk | pack | Foto |
+|---|---|---|---|---|
+| Pembe Renk Plastik Çatal (mevcut; Unicorn bağlı) | GEN-CTL-PMB-25 | Pembe | 25 | 2 |
+| Mavi Plastik Çatal | GEN-CTL-MAV-25 | Mavi | 25 | 2 |
+| Sarı Plastik Çatal | GEN-CTL-SAR-25 | Sarı | 25 | 2 |
+| Siyah Plastik Çatal | GEN-CTL-SYH-25 | Siyah | 25 | 1 |
+| Siyah Plastik Çatal | GEN-CTL-SYH-10 | Siyah | 10 | 1 |
+| Gümüş Plastik Çatal | GEN-CTL-GMS-25 | Gümüş | 25 | 1 |
+| Yeşil Plastik Çatal | GEN-CTL-YSL-25 | Yeşil | 25 | 2 |
+| Turuncu Plastik Çatal | GEN-CTL-TRN-25 | Turuncu | 25 | 2 |
+| Lila Plastik Çatal | GEN-CTL-LIL-25 | Lila | 25 | 2 |
+| Krem Plastik Çatal | GEN-CTL-KRE-25 | Krem | 25 | 2 |
+| Gri Plastik Çatal | GEN-CTL-GRI-25 | Gri | 25 | 1 |
+| Kırmızı Plastik Çatal | GEN-CTL-KRM-25 | Kırmızı | 25 | 2 |
+| Altın Plastik Çatal | GEN-CTL-ALT-25 | Altın | 25 | 2 |
 
 ---
 
@@ -224,7 +269,26 @@ Kategori sırası:
 
 **Dikkat:** `banner` kelimesi flama sayılır. Unicorn kapak dosyası `unıcorn-tema-banner.jfif` import ile tekrar işlenirse flama ürününe gidebilir. Kapak için `hero`/`kapak` kullan veya `banner` kuralını hero’ya al (yapılacaklar).
 
-Script **tema odaklıdır**; düz renk ürünü (`themeId` null, `colorId`) üretmez.
+Script **tema odaklıdır**; düz renk için `import:plain` kullanılır.
+
+---
+
+## 6b. Düz renk import
+
+```bash
+npm run import:plain -- --src="Parti malzemeleri/Arka Fon perde" --category=fon-perdesi --dry-run
+npm run import:plain -- --src="Parti malzemeleri/Arka Fon perde" --category=fon-perdesi
+npm run import:plain -- --src="Parti malzemeleri/Lisanssız Çatal" --category=plastik-catal
+```
+
+`--category` mevcut kategori slug’ı olmalı (yeni kategori açılmaz). `--dry-run` sadece tablo basar. Orijinaller silinmez/taşınmaz. İkinci çalıştırma SKU/slug ile upsert eder.
+
+- Çıktı: `client/public/images/products/duz-renk/<renk-slug>/<ürün-slug>.webp` (+ `-md`, `-sm`), kare beyaz tuval
+- `themeId: null`, `colorId` dolu, **ThemeProduct yazılmaz**
+- Çakışan pembe ürünler (`GEN-FON-PMB-01`, `GEN-CTL-PMB-25`): yalnızca fotoğraf eklenir; fiyat ve Unicorn bağı korunur
+- Renk dosya adında yoksa `server/scripts/data/plain-file-colors.json` veya görselden dominant renk
+- Fotoğraf yoksa rengin hexCode’u ile SVG yer tutucu
+- Kategori fiyatları: fon 119 TL, çatal 79 TL (dosyada fiyat yoksa)
 
 ---
 
@@ -239,6 +303,7 @@ Script **tema odaklıdır**; düz renk ürünü (`themeId` null, `colorId`) üre
 - İyiki doğdun → flama kuralı; yazı ürünü pasif, temadan ve sepetten çıkarıldı
 - Fiyat güncellemesi; masa örtüsü adı + Ölçü özelliği
 - Pembe Fon Perdesi düz renk ürünü (çatal/bıçak mantığı), Unicorn setine ThemeProduct ile bağlı
+- Düz renk import: Fon perdesi + plastik çatal (Arka Fon perde, Lisanssız Çatal); `/renkler` ürün sayısı; `/renk/:slug` kategori gruplu
 - Boş kategori başlığı gizleme
 - Admin: tema/ürün/kategori/renk CRUD, tema-ürün ata + sürükle sıra, sipariş listesi, ayarlar, ürün özellikleri ekle/sil
 
@@ -251,21 +316,22 @@ Script **tema odaklıdır**; düz renk ürünü (`themeId` null, `colorId`) üre
 Yer tutucu (jpg URL → svg veya harf kutusu):
 
 - Unicorn Masa Örtüsü
-- Pembe Fon Perdesi
-- Pembe Renk Plastik Çatal
+- Pembe Fon Perdesi (pembe hex SVG)
 - Pembe Renk Plastik Bıçak
 - Flama 2. galeri görseli (`unicorn-flama.jpg` diskte yok, svg düşer)
+
+Pembe çatalın gerçek fotoğrafı var (`duz-renk/pembe/`).
 
 ### Veri / katalog
 
 - 40 tema daha yok
 - `UNI-YZI-01` ölü kayıt (pasif, görselsiz, ThemeProduct yok) — silinebilir veya ileride gerçek yazı ürünü olarak açılır
 - Balon / mum kategorileri boş
-- Pembe dışında renk ürünü yok
+- Düz renk fiyatları varsayılan (fon 119, çatal 79) — kontrol et
+- `Parti malzemeleri` içinde diğer klasörler (bıçak, bardak, tabak, peçete, masa örtüsü, balon) henüz import edilmedi
 
 ### Import / görsel
 
-- **Düz renk import script’i yok** (aşağıdaki rehber + yapılacak)
 - `banner` dosya adı flama ile çakışıyor
 - `hero-mobile.webp` üretildi ama hero artık tek görsel; dosya artabilir
 - `parseThemeImage` `fon-perdesi`, `plastik-catal`, `plastik-bicak` dosya adını tanımaz
@@ -286,81 +352,40 @@ Yer tutucu (jpg URL → svg veya harf kutusu):
 
 ---
 
-## 9. Düz renk fotoğrafları — hazırlık rehberi
+## 9. Düz renk fotoğrafları — klasör ve import
 
-### Önerilen klasör
-
-Proje kökü (import henüz bunu okumaz; hazırlık için):
+Kaynak (orijinaller silinmez):
 
 ```
-dgrenkler/
-  pembe/
-    pembe-tabak-8li.jpg
-    pembe-bardak-8li.jpg
-    pembe-pecete-16li.jpg
-    pembe-fon-perdesi.jpg
-    pembe-catal-25li.jpg
-    pembe-bicak-25li.jpg
-  mavi/
-    mavi-tabak-8li.jpg
-    …
+Parti malzemeleri/
+  Arka Fon perde/     → --category=fon-perdesi
+  Lisanssız Çatal/    → --category=plastik-catal
+  (diğer klasörler henüz import edilmedi)
 ```
 
-### Dosya adı (renk + ürün + adet)
+Komut: `npm run import:plain -- --src="<klasör>" --category=<slug> [--dry-run]`
 
-Türkçe karakter, boşluk, `8'li` / `8 adet` / `pk10` ileride aynı normalize ile okunmalı.
+Dosya adı: renk + ürün + adet. Rastgele adlı dosyalar `plain-file-colors.json` veya görsel rengi ile eşlenir.
 
-```
-pembe tabak 8li.jpg
-pembe-karton-tabak-8-adet.webp
-mavi bardak 8li.jpg
-pembe fon perdesi.jpg
-pembe catal 25li.jpg
-pembe bicak 25li.jpg
-```
-
-### Desteklenen ürün tipleri (mevcut kategoriler)
-
-Karton Tabak, Karton Bardak, Peçete, Kürdan, Doğum Günü Yazısı, Flama, Fon Perdesi, Masa Örtüsü, Plastik Çatal, Plastik Bıçak, Balon, Mum.
-
-Düz renkte asıl ihtiyaç: çatal, bıçak, fon perdesi, belki düz tabak/bardak.
-
-### Fotoğraf önerisi
-
-- Düz/beyaz arka plan
-- Ürün ortalı, tercihen kare
-- En az 1200px kenar
-- İyi, eşit ışık; EXIF yönü import’ta `.rotate()` ile düzelir
-
-### Import script’i düz renk için hazır değil — yapılacaklar
-
-`importThemeImages.js` `--theme=` bekler, ürün adı `"${theme} Karton Tabak"` üretir, `themeId` set eder.
-
-Yeni komut örneği:
-
-```bash
-npm run import:color -- --color=pembe --src=../dgrenkler/pembe
-```
-
-Gerekli değişiklikler:
-
-1. `parseThemeImage.js` (veya `parseColorImage.js`): ilk token renk (`pembe`, `mavi`…); kategori eşlemesine `fon`, `perde`, `catal`, `bicak` ekle; ürün adı `"Pembe Fon Perdesi"`; SKU `GEN-FON-PMB-01` kalıbı.
-2. `themeId: null`, `colorId` eşleşen renk; mevcut ürünü SKU/slug ile upsert (pembe çatalı ezmeden).
-3. Çıktı klasörü: `client/public/images/products/<renk-slug>/` veya mevcut düz dosya adları.
-4. `ThemeProduct` **otomatik bağlama** — dikkat: pembe çatal her temaya değil, admin’de seçilen temalara bağlı. Import yalnızca ürün + görsel güncellesin; tema bağını zorla açmasın (veya `--attach-theme=unicorn` opsiyonel).
-5. Hero/kolaj üretme (düz renkte tema hero yok).
-6. Seed’deki `GEN-*` SKU’ları ile çakışmayı önceden map et.
-
-O zamana kadar düz renk fotoğrafını admin ürün formundan yükle veya `client/public/images/products/<slug>.jpg` koy (ImageWithFallback jpg dener).
+Kalan klasörler (bıçak, bardak, tabak, peçete, masa örtüsü, balon) aynı komutla eklenecek.
 
 ---
 
 ## 10. Hızlı URL’ler (dev)
 
+Mağaza bu oturumda Vite 5174’te de açılabilir; varsayılan 5173.
+
 - http://localhost:5173/
 - http://localhost:5173/temalar
 - http://localhost:5173/tema/unicorn
+- http://localhost:5173/renkler
 - http://localhost:5173/renk/pembe
+- http://localhost:5173/renk/mavi
+- http://localhost:5173/renk/altin
+- http://localhost:5173/renk/siyah
 - http://localhost:5173/urun/unicorn-flama
 - http://localhost:5173/urun/pembe-fon-perdesi
+- http://localhost:5173/urun/pembe-renk-plastik-catal-25li
+- http://localhost:5173/urun/mavi-fon-perdesi
+- http://localhost:5173/urun/altin-metalik-fon-perdesi
 - http://localhost:5173/admin/giris

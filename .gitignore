@@ -1,15 +1,26 @@
 node_modules
-dist
+dist/
+build/
+client/dist
+
 .env
+!.env.example
+!**/.env.example
+
 *.db
 *.db-journal
+server/prisma/dev.db
+server/prisma/dev.db-journal
+
 server/uploads/*
 !server/uploads/.gitkeep
+
+dgtemalar/
+Parti malzemeleri/
+Parti Malzemeleri/
+
 .DS_Store
 Thumbs.db
 *.log
 .vscode
 .idea
-client/dist
-server/prisma/dev.db
-server/prisma/dev.db-journal
