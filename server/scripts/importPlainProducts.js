@@ -11,6 +11,7 @@ import {
   PLAIN_CATEGORY_CONFIG,
   PLAIN_COLORS,
   PRESERVED_PLAIN_SKUS,
+  CREATABLE_PLAIN_CATEGORIES,
 } from '../src/utils/plainColors.js';
 import {
   parsePlainImageFilename,
@@ -246,7 +247,6 @@ async function findExistingProduct(row, categoryId, colorId) {
       categoryId,
       colorId,
       packSize: row.packSize,
-      name: row.productName,
     },
   });
 }
@@ -275,6 +275,41 @@ async function ensureColor(color) {
   });
 }
 
+const CATEGORY_SORT_ORDER = {
+  'karton-tabak': 1,
+  'plastik-tabak': 2,
+  'karton-bardak': 3,
+  'plastik-bardak': 4,
+  pecete: 5,
+  kurdan: 6,
+  'dogum-gunu-yazisi': 7,
+  flama: 8,
+  'fon-perdesi': 9,
+  'masa-ortusu': 10,
+  'plastik-catal': 11,
+  'plastik-bicak': 12,
+  balon: 13,
+  mum: 14,
+};
+
+async function applyCategorySort() {
+  for (const [s, sortOrder] of Object.entries(CATEGORY_SORT_ORDER)) {
+    await prisma.category.updateMany({ where: { slug: s }, data: { sortOrder } });
+  }
+}
+
+async function ensureCategory(slug) {
+  let existing = await prisma.category.findUnique({ where: { slug } });
+  if (!existing) {
+    const spec = CREATABLE_PLAIN_CATEGORIES[slug];
+    if (!spec) return null;
+    existing = await prisma.category.create({ data: { ...spec, isActive: true } });
+    console.log(`[import:plain] kategori oluşturuldu: ${spec.name}`);
+  }
+  await applyCategorySort();
+  return prisma.category.findUnique({ where: { slug } });
+}
+
 async function main() {
   const args = parseArgs(process.argv);
   if (!args.src || !args.category) {
@@ -301,7 +336,18 @@ async function main() {
     process.exit(1);
   }
 
-  const category = await prisma.category.findUnique({ where: { slug: args.category } });
+  let category = await prisma.category.findUnique({ where: { slug: args.category } });
+  if (args.dryRun) {
+    if (!category && CREATABLE_PLAIN_CATEGORIES[args.category]) {
+      category = { id: 0, ...CREATABLE_PLAIN_CATEGORIES[args.category] };
+      console.log(`[import:plain] dry-run: "${category.name}" yok, yazılmadan varsayıldı.`);
+    }
+  } else if (!category) {
+    category = await ensureCategory(args.category);
+  } else {
+    await applyCategorySort();
+    category = await prisma.category.findUnique({ where: { slug: args.category } });
+  }
   if (!category) {
     console.error(`[import:plain] "${args.category}" kategorisi veri tabanında yok. Yeni kategori açılmıyor.`);
     process.exit(1);
@@ -317,6 +363,7 @@ async function main() {
   const whiteMapped = [];
   const rows = [];
   const prefixMode = args.naming === 'prefix';
+  let skippedImageCount = 0;
 
   for (const full of imageFiles) {
     const filename = path.basename(full);
@@ -326,6 +373,7 @@ async function main() {
       parsed.fullPath = full;
       parsed.hasPhoto = true;
       if (!parsed.ok) {
+        skippedImageCount += 1;
         skipped.push(`${filename} — ${parsed.skipReason}`);
         continue;
       }
@@ -397,6 +445,10 @@ async function main() {
     });
   }
 
+  const skipRate = imageFiles.length ? skippedImageCount / imageFiles.length : 0;
+  const skipPct = Math.round(skipRate * 100);
+  console.log(`[import:plain] kural dışı görsel: ${skippedImageCount}/${imageFiles.length} (%${skipPct})`);
+
   if (!rows.length) {
     console.error('[import:plain] İşlenecek ürün/görsel yok.');
     skipped.forEach((s) => console.log('  atlandı:', s));
@@ -412,6 +464,12 @@ async function main() {
   console.log('\nİçe aktarma tablosu:\n');
   printTable(rows, args.naming);
   console.log('');
+
+  if (skipRate > 0.2) {
+    console.error(`[import:plain] Klasörün %${skipPct}'i kurala uymuyor (eşik %20). İçe aktarma iptal.`);
+    skipped.forEach((s) => console.log('  atlandı:', s));
+    process.exit(2);
+  }
 
   const groups = new Map();
   for (const row of rows) {
@@ -437,6 +495,7 @@ async function main() {
   const photosAdded = [];
   const pricePlaceholders = [];
   const createdColors = [];
+  const promotedSecondary = [];
 
   for (const [, list] of groups) {
     const primary = list[0];
@@ -469,7 +528,7 @@ async function main() {
     const preserved = existing && PRESERVED_PLAIN_SKUS.has(existing.sku);
     const isNew = !existing;
 
-    const packKnown = cfg.defaultPack === 1 || list.some((r) => !r.packInferred);
+    const packKnown = prefixMode || cfg.defaultPack === 1 || list.some((r) => !r.packInferred);
     const unitLabel = packKnown || cfg.defaultPack === 1
       ? (primary.packSize > 1 ? unitLabelFor(primary.packSize) : 'adet')
       : 'paket';
@@ -526,8 +585,13 @@ async function main() {
     const urls = [];
 
     if (photoRows.length) {
+      const minIdx = Math.min(...photoRows.map((r) => r.photoIndex || 1));
+      if (minIdx > 1) {
+        promotedSecondary.push(`${product.name} (yalnızca ${minIdx}. foto vardı, ana görsel yapıldı)`);
+      }
       for (const row of photoRows) {
-        const idx = row.photoIndex || 1;
+        const rawIdx = row.photoIndex || 1;
+        const idx = minIdx > 1 ? rawIdx - minIdx + 1 : rawIdx;
         const destBase = path.join(destDir, idx <= 1 ? product.slug : `${product.slug}-${idx}`);
         await writeSizes(row.fullPath, destBase);
         urls.push(`/images/products/duz-renk/${color.slug}/${path.basename(destBase)}.webp`);
@@ -594,6 +658,10 @@ async function main() {
   if (pricePlaceholders.length) {
     console.log('  fiyatı kontrol et:');
     pricePlaceholders.forEach((p) => console.log(`    - ${p}`));
+  }
+  if (promotedSecondary.length) {
+    console.log('  yalnızca 2+ foto vardı, ana yapıldı:');
+    promotedSecondary.forEach((p) => console.log(`    - ${p}`));
   }
   guessed.forEach((g) => console.log(`  tahmin: ${g}`));
   whiteMapped.forEach((g) => console.log(`  beyaz→krem: ${g}`));

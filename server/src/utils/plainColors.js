@@ -44,6 +44,22 @@ export const PLAIN_CATEGORY_CONFIG = {
     skuStyle: 'pack',
     material: 'Plastik',
   },
+  'plastik-tabak': {
+    name: 'Plastik Tabak',
+    abbr: 'TBK',
+    price: 89,
+    defaultPack: 8,
+    skuStyle: 'pack',
+    material: 'Plastik',
+  },
+  'plastik-bardak': {
+    name: 'Plastik Bardak',
+    abbr: 'BRD',
+    price: 69,
+    defaultPack: 8,
+    skuStyle: 'pack',
+    material: 'Plastik',
+  },
   'karton-tabak': {
     name: 'Karton Tabak',
     abbr: 'TBK',
@@ -78,7 +94,26 @@ export const PLAIN_CATEGORY_CONFIG = {
   },
 };
 
-/** Mevcut pembe ürünler: fotoğraf eklenir, fiyat / ad / tema bağına dokunulmaz. */
+export const CREATABLE_PLAIN_CATEGORIES = {
+  'plastik-tabak': {
+    slug: 'plastik-tabak',
+    name: 'Plastik Tabak',
+    pluralName: 'Tabaklar',
+    iconName: 'DinnerDining',
+    unitLabel: 'paket',
+    sortOrder: 2,
+    description: 'Renkli plastik tabaklar',
+  },
+  'plastik-bardak': {
+    slug: 'plastik-bardak',
+    name: 'Plastik Bardak',
+    pluralName: 'Bardaklar',
+    iconName: 'LocalCafe',
+    unitLabel: 'paket',
+    sortOrder: 4,
+    description: 'Renkli plastik bardaklar',
+  },
+};
 export const PRESERVED_PLAIN_SKUS = new Set(['GEN-FON-PMB-01', 'GEN-CTL-PMB-25', 'GEN-BCK-PMB-25']);
 
 export function colorBySlug(slug) {

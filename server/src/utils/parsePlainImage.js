@@ -65,6 +65,8 @@ export function productTitleFor(color, categorySlug, variant) {
   }
   if (categorySlug === 'plastik-catal') return `${color.name} Plastik Çatal`;
   if (categorySlug === 'plastik-bicak') return `${color.name} Plastik Bıçak`;
+  if (categorySlug === 'plastik-tabak') return `${color.name} Plastik Tabak`;
+  if (categorySlug === 'plastik-bardak') return `${color.name} Plastik Bardak`;
   return `${color.name} ${catName}`;
 }
 
@@ -152,14 +154,20 @@ export function resolvePrefixColor(token) {
   };
 }
 
+const PREFIX_PRODUCT_TYPES = [
+  { keys: ['bicak'], categorySlug: 'plastik-bicak' },
+  { keys: ['tabak'], categorySlug: 'plastik-tabak' },
+  { keys: ['bardak'], categorySlug: 'plastik-bardak' },
+  { keys: ['catal'], categorySlug: 'plastik-catal' },
+];
+
 /**
- * <renk>-plastik-bicak.png → ana fotoğraf
- * <renk>-plastik-bicak2.png → 2. fotoğraf
+ * <renk>-plastik-<ürün>.png → ana fotoğraf
+ * <renk>-plastik-<ürün>2.png / ürün-2 / ürün_2 / ürün 2 → 2. fotoğraf
  * Yazım: platik, bıcak, büyük harf, .jpg/.jpeg/.webp
  */
 export function parsePrefixPlainFilename(filename, opts = {}) {
-  const categorySlug = opts.categorySlug;
-  const cfg = PLAIN_CATEGORY_CONFIG[categorySlug];
+  const requestedCategory = opts.categorySlug;
   const normalized = slugify(filename.replace(/\.[^.]+$/, ''));
 
   const delim = normalized.match(/^(.*?)-(plastik|platik)-(.*)$/);
@@ -167,7 +175,7 @@ export function parsePrefixPlainFilename(filename, opts = {}) {
     return {
       filename,
       ok: false,
-      skipReason: 'prefix kuralına uymuyor (<renk>-plastik-...)',
+      skipReason: 'prefix kuralına uymuyor (<renk>-plastik-<ürün>...)',
       photoIndex: 1,
     };
   }
@@ -176,7 +184,7 @@ export function parsePrefixPlainFilename(filename, opts = {}) {
   let rest = delim[3];
   let photoIndex = 1;
   const packFromRest = parsePackSize(rest);
-  const trailing = rest.match(/^(.*?)(\d+)$/);
+  const trailing = rest.match(/^(.*?)(?:-|_)?(\d+)$/);
   if (trailing && packFromRest == null) {
     const n = Number(trailing[2]);
     if (Number.isFinite(n) && n >= 1 && n < 20) {
@@ -185,19 +193,42 @@ export function parsePrefixPlainFilename(filename, opts = {}) {
     }
   }
 
+  const typeSlug = slugify(rest);
+  const typeHit = PREFIX_PRODUCT_TYPES.find((t) => t.keys.some((k) => typeSlug === k || typeSlug.startsWith(`${k}-`)));
+  const categorySlug = requestedCategory || typeHit?.categorySlug;
+  const cfg = PLAIN_CATEGORY_CONFIG[categorySlug];
+  if (!categorySlug || !cfg) {
+    return {
+      filename,
+      ok: false,
+      skipReason: 'ürün türü anlaşılamadı',
+      photoIndex,
+    };
+  }
+
   const { color, mappedFromWhite, invented } = resolvePrefixColor(colorToken);
-  const packSize = packFromRest ?? cfg?.defaultPack ?? 1;
-  const variant = detectVariant(normalized, color?.slug, categorySlug);
-  const title = color ? productTitleFor(color, categorySlug, variant) : '—';
-  const skuStyle = cfg?.skuStyle || 'pack';
-  const slug = color ? productSlugForPlain(title, packSize, skuStyle) : null;
-  const sku = color && cfg ? skuForPlain(cfg, color.abbr, packSize, 1) : null;
+  if (!color) {
+    return {
+      filename,
+      ok: false,
+      skipReason: 'renk anlaşılamadı',
+      photoIndex,
+    };
+  }
+
+  const packInferred = packFromRest == null;
+  const packSize = packFromRest ?? cfg.defaultPack ?? 1;
+  const variant = detectVariant(normalized, color.slug, categorySlug);
+  const title = productTitleFor(color, categorySlug, variant);
+  const skuStyle = cfg.skuStyle || 'pack';
+  const slug = productSlugForPlain(title, packSize, skuStyle);
+  const sku = skuForPlain(cfg, color.abbr, packSize, 1);
 
   return {
     filename,
     ok: true,
     categorySlug,
-    categoryName: cfg?.name || categorySlug,
+    categoryName: cfg.name || categorySlug,
     color,
     colorFrom: invented ? 'invented' : mappedFromWhite ? 'beyaz→krem' : 'prefix',
     mappedFromWhite,
@@ -205,14 +236,14 @@ export function parsePrefixPlainFilename(filename, opts = {}) {
     variant,
     photoIndex,
     packSize,
-    packInferred: false,
+    packInferred,
     productName: title,
     slug,
     sku,
-    unitLabel: packSize > 1 ? unitLabelFor(packSize) : cfg?.defaultPack === 1 ? 'adet' : 'paket',
-    groupKey: color ? groupKeyFor({ categorySlug, colorSlug: color.slug, variant, packSize }) : `unknown::${filename}`,
+    unitLabel: packSize > 1 ? unitLabelFor(packSize) : cfg.defaultPack === 1 ? 'adet' : 'paket',
+    groupKey: groupKeyFor({ categorySlug, colorSlug: color.slug, variant, packSize }),
     hasPhoto: true,
-    price: cfg?.price ?? null,
+    price: cfg.price ?? null,
     priceDefaulted: true,
     normalized,
   };
