@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 import { defaultAttributes, plainProductAttributes } from '../src/utils/productAttributes.js';
-import { seedColorRows } from '../src/utils/plainColors.js';
+import { seedColorRows, PLAIN_CATEGORY_CONFIG } from '../src/utils/plainColors.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -524,6 +524,27 @@ async function upsertPlainCatalog(categories, colors) {
     { sku: 'GEN-BRD-SYH-08', slug: 'siyah-plastik-bardak-8li', name: 'Siyah Plastik Bardak', color: 'siyah', category: 'plastik-bardak', price: 69, packSize: 8, unitLabel: "8'li paket", packKnown: true, extra: 1 },
     { sku: 'GEN-BRD-TRN-08', slug: 'turuncu-plastik-bardak-8li', name: 'Turuncu Plastik Bardak', color: 'turuncu', category: 'plastik-bardak', price: 69, packSize: 8, unitLabel: "8'li paket", packKnown: true, extra: 1 },
     { sku: 'GEN-BRD-YSL-08', slug: 'yesil-plastik-bardak-8li', name: 'Yeşil Plastik Bardak', color: 'yesil', category: 'plastik-bardak', price: 69, packSize: 8, unitLabel: "8'li paket", packKnown: true, extra: 1 },
+    { sku: 'GEN-PCT-ALT-16', slug: 'altin-kagit-pecete-16li', name: 'Altın Kağıt Peçete', color: 'altin', category: 'pecete', price: 75, packSize: 16, unitLabel: "16'lı paket", packKnown: true, extra: 1 },
+    { sku: 'GEN-PCT-GMS-16', slug: 'gumus-kagit-pecete-16li', name: 'Gümüş Kağıt Peçete', color: 'gumus', category: 'pecete', price: 75, packSize: 16, unitLabel: "16'lı paket", packKnown: true, extra: 0 },
+    { sku: 'GEN-PCT-KRM-16', slug: 'kirmizi-kagit-pecete-16li', name: 'Kırmızı Kağıt Peçete', color: 'kirmizi', category: 'pecete', price: 75, packSize: 16, unitLabel: "16'lı paket", packKnown: true, extra: 1 },
+    { sku: 'GEN-PCT-KRE-16', slug: 'krem-kagit-pecete-16li', name: 'Krem Kağıt Peçete', color: 'krem', category: 'pecete', price: 75, packSize: 16, unitLabel: "16'lı paket", packKnown: true, extra: 0 },
+    { sku: 'GEN-PCT-MAV-16', slug: 'mavi-kagit-pecete-16li', name: 'Mavi Kağıt Peçete', color: 'mavi', category: 'pecete', price: 75, packSize: 16, unitLabel: "16'lı paket", packKnown: true, extra: 1 },
+    { sku: 'GEN-PCT-PMB-16', slug: 'pembe-kagit-pecete-16li', name: 'Pembe Kağıt Peçete', color: 'pembe', category: 'pecete', price: 75, packSize: 16, unitLabel: "16'lı paket", packKnown: true, extra: 1 },
+    { sku: 'GEN-PCT-SAR-16', slug: 'sari-kagit-pecete-16li', name: 'Sarı Kağıt Peçete', color: 'sari', category: 'pecete', price: 75, packSize: 16, unitLabel: "16'lı paket", packKnown: true, extra: 1 },
+    { sku: 'GEN-PCT-SYH-16', slug: 'siyah-kagit-pecete-16li', name: 'Siyah Kağıt Peçete', color: 'siyah', category: 'pecete', price: 75, packSize: 16, unitLabel: "16'lı paket", packKnown: true, extra: 1 },
+    { sku: 'GEN-PCT-TRN-16', slug: 'turuncu-kagit-pecete-16li', name: 'Turuncu Kağıt Peçete', color: 'turuncu', category: 'pecete', price: 75, packSize: 16, unitLabel: "16'lı paket", packKnown: true, extra: 0 },
+    { sku: 'GEN-PCT-YSL-16', slug: 'yesil-kagit-pecete-16li', name: 'Yeşil Kağıt Peçete', color: 'yesil', category: 'pecete', price: 75, packSize: 16, unitLabel: "16'lı paket", packKnown: true, extra: 0 },
+    { sku: 'GEN-MOR-ALT-01', slug: 'altin-plastik-masa-ortusu', name: 'Altın Plastik Masa Örtüsü', color: 'altin', category: 'masa-ortusu', price: 75, packSize: 1, unitLabel: 'adet', packKnown: true, extra: 1, size: '120 x 180 cm' },
+    { sku: 'GEN-MOR-GMS-01', slug: 'gumus-plastik-masa-ortusu', name: 'Gümüş Plastik Masa Örtüsü', color: 'gumus', category: 'masa-ortusu', price: 75, packSize: 1, unitLabel: 'adet', packKnown: true, extra: 1, size: '120 x 180 cm' },
+    { sku: 'GEN-MOR-KRE-01', slug: 'krem-plastik-masa-ortusu', name: 'Krem Plastik Masa Örtüsü', color: 'krem', category: 'masa-ortusu', price: 75, packSize: 1, unitLabel: 'adet', packKnown: true, extra: 0, size: '120 x 180 cm' },
+    { sku: 'GEN-MOR-KRM-01', slug: 'kirmizi-plastik-masa-ortusu', name: 'Kırmızı Plastik Masa Örtüsü', color: 'kirmizi', category: 'masa-ortusu', price: 75, packSize: 1, unitLabel: 'adet', packKnown: true, extra: 0, size: '120 x 180 cm' },
+    { sku: 'GEN-MOR-MAV-01', slug: 'mavi-plastik-masa-ortusu', name: 'Mavi Plastik Masa Örtüsü', color: 'mavi', category: 'masa-ortusu', price: 75, packSize: 1, unitLabel: 'adet', packKnown: true, extra: 1, size: '120 x 180 cm' },
+    { sku: 'GEN-MOR-MOR-01', slug: 'mor-plastik-masa-ortusu', name: 'Mor Plastik Masa Örtüsü', color: 'mor', category: 'masa-ortusu', price: 75, packSize: 1, unitLabel: 'adet', packKnown: true, extra: 0, size: '120 x 180 cm' },
+    { sku: 'GEN-MOR-PMB-01', slug: 'pembe-plastik-masa-ortusu', name: 'Pembe Plastik Masa Örtüsü', color: 'pembe', category: 'masa-ortusu', price: 75, packSize: 1, unitLabel: 'adet', packKnown: true, extra: 1, size: '120 x 180 cm' },
+    { sku: 'GEN-MOR-SAR-01', slug: 'sari-plastik-masa-ortusu', name: 'Sarı Plastik Masa Örtüsü', color: 'sari', category: 'masa-ortusu', price: 75, packSize: 1, unitLabel: 'adet', packKnown: true, extra: 0, size: '120 x 180 cm' },
+    { sku: 'GEN-MOR-SYH-01', slug: 'siyah-plastik-masa-ortusu', name: 'Siyah Plastik Masa Örtüsü', color: 'siyah', category: 'masa-ortusu', price: 75, packSize: 1, unitLabel: 'adet', packKnown: true, extra: 0, size: '120 x 180 cm' },
+    { sku: 'GEN-MOR-TRN-01', slug: 'turuncu-plastik-masa-ortusu', name: 'Turuncu Plastik Masa Örtüsü', color: 'turuncu', category: 'masa-ortusu', price: 75, packSize: 1, unitLabel: 'adet', packKnown: true, extra: 0, size: '120 x 180 cm' },
+    { sku: 'GEN-MOR-YSL-01', slug: 'yesil-plastik-masa-ortusu', name: 'Yeşil Plastik Masa Örtüsü', color: 'yesil', category: 'masa-ortusu', price: 75, packSize: 1, unitLabel: 'adet', packKnown: true, extra: 0, size: '120 x 180 cm' },
   ];
 
   for (const row of rows) {
@@ -561,6 +582,8 @@ async function upsertPlainCatalog(categories, colors) {
         packKnown: row.packKnown,
         categorySlug: row.category,
         colorName: color.name,
+        material: PLAIN_CATEGORY_CONFIG[row.category]?.material,
+        size: row.size,
       }).map((a) => ({ ...a, productId: product.id })),
     });
 

@@ -483,6 +483,9 @@ async function main() {
     rows.filter((r) => r.packInferred).forEach((r) => {
       console.log(`[uyarı] "${r.filename}" paket adedi yok, ${r.packSize} kabul edildi.`);
     });
+    rows.filter((r) => r.sizeInferred).forEach((r) => {
+      console.log(`[uyarı] "${r.filename}" ölçü yok, ${r.size} kabul edildi.`);
+    });
     guessed.forEach((g) => console.log(`[tahmin] ${g}`));
     whiteMapped.forEach((g) => console.log(`[beyaz→krem] ${g}`));
     skipped.forEach((s) => console.log(`[atlandı] ${s}`));
@@ -496,6 +499,7 @@ async function main() {
   const pricePlaceholders = [];
   const createdColors = [];
   const promotedSecondary = [];
+  const sizePlaceholders = [];
 
   for (const [, list] of groups) {
     const primary = list[0];
@@ -579,6 +583,9 @@ async function main() {
       created.push(product.name);
       pricePlaceholders.push(`${product.name} → ₺${cfg.price}`);
     }
+    if (primary.sizeInferred && primary.size) {
+      sizePlaceholders.push(`${product.name} → ${primary.size}`);
+    }
 
     const photoRows = list.filter((r) => r.hasPhoto && r.fullPath);
     const destDir = path.join(root, 'client/public/images/products/duz-renk', color.slug);
@@ -642,6 +649,7 @@ async function main() {
           categorySlug: args.category,
           colorName: color.name,
           material: cfg.material,
+          size: primary.size || cfg.defaultSize,
         }).map((a) => ({ ...a, productId: product.id })),
       });
     }
@@ -658,6 +666,10 @@ async function main() {
   if (pricePlaceholders.length) {
     console.log('  fiyatı kontrol et:');
     pricePlaceholders.forEach((p) => console.log(`    - ${p}`));
+  }
+  if (sizePlaceholders.length) {
+    console.log('  ölçüyü kontrol et:');
+    sizePlaceholders.forEach((p) => console.log(`    - ${p}`));
   }
   if (promotedSecondary.length) {
     console.log('  yalnızca 2+ foto vardı, ana yapıldı:');

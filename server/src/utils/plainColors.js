@@ -77,7 +77,7 @@ export const PLAIN_CATEGORY_CONFIG = {
     material: 'Karton',
   },
   pecete: {
-    name: 'Peçete',
+    name: 'Kağıt Peçete',
     abbr: 'PCT',
     price: 75,
     defaultPack: 16,
@@ -85,12 +85,13 @@ export const PLAIN_CATEGORY_CONFIG = {
     material: 'Kağıt',
   },
   'masa-ortusu': {
-    name: 'Masa Örtüsü',
+    name: 'Plastik Masa Örtüsü',
     abbr: 'MOR',
     price: 75,
     defaultPack: 1,
-    skuStyle: 'seq',
+    skuStyle: 'pack',
     material: 'Plastik',
+    defaultSize: '120 x 180 cm',
   },
 };
 

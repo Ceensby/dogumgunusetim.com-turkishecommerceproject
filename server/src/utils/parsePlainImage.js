@@ -67,6 +67,10 @@ export function productTitleFor(color, categorySlug, variant) {
   if (categorySlug === 'plastik-bicak') return `${color.name} Plastik Bıçak`;
   if (categorySlug === 'plastik-tabak') return `${color.name} Plastik Tabak`;
   if (categorySlug === 'plastik-bardak') return `${color.name} Plastik Bardak`;
+  if (categorySlug === 'karton-tabak') return `${color.name} Karton Tabak`;
+  if (categorySlug === 'karton-bardak') return `${color.name} Karton Bardak`;
+  if (categorySlug === 'pecete') return `${color.name} Kağıt Peçete`;
+  if (categorySlug === 'masa-ortusu') return `${color.name} Plastik Masa Örtüsü`;
   return `${color.name} ${catName}`;
 }
 
@@ -130,7 +134,44 @@ function hexFromSlug(slug) {
   return `#${hex(f(0))}${hex(f(8))}${hex(f(4))}`.toUpperCase();
 }
 
-/** Prefix kuralı: ilk "-plastik"/"-platik" öncesi renk, sondaki rakam fotoğraf sırası. */
+function compactKey(value) {
+  return slugify(value).replace(/-/g, '');
+}
+
+const PREFIX_MATERIALS = [
+  { keys: ['plastik', 'platik'], canonical: 'plastik' },
+  { keys: ['kagit'], canonical: 'kagit' },
+  { keys: ['karton'], canonical: 'karton' },
+];
+
+const PREFIX_MATERIAL_RE = new RegExp(
+  `^(.*?)-(${PREFIX_MATERIALS.flatMap((m) => m.keys).join('|')})-(.*)$`,
+);
+
+const PREFIX_PRODUCT_TYPES = [
+  { keys: ['bicak'], material: 'plastik', categorySlug: 'plastik-bicak' },
+  { keys: ['tabak'], material: 'plastik', categorySlug: 'plastik-tabak' },
+  { keys: ['bardak'], material: 'plastik', categorySlug: 'plastik-bardak' },
+  { keys: ['catal'], material: 'plastik', categorySlug: 'plastik-catal' },
+  { keys: ['masaortusu'], material: 'plastik', categorySlug: 'masa-ortusu' },
+  { keys: ['pecete'], material: 'kagit', categorySlug: 'pecete' },
+  { keys: ['tabak'], material: 'karton', categorySlug: 'karton-tabak' },
+  { keys: ['bardak'], material: 'karton', categorySlug: 'karton-bardak' },
+];
+
+function materialCanonical(token) {
+  return PREFIX_MATERIALS.find((m) => m.keys.includes(token))?.canonical || token;
+}
+
+function matchPrefixProduct(material, productSlug) {
+  const compact = compactKey(productSlug);
+  return PREFIX_PRODUCT_TYPES.find((t) => {
+    if (t.material !== material) return false;
+    return t.keys.some((k) => compact === k || compact.startsWith(k));
+  });
+}
+
+/** Prefix kuralı: malzeme kelimesinden önceki renk, sondaki rakam fotoğraf sırası. */
 export function resolvePrefixColor(token) {
   const slug = slugify(token);
   if (!slug) return { color: null, mappedFromWhite: false, invented: false };
@@ -154,33 +195,27 @@ export function resolvePrefixColor(token) {
   };
 }
 
-const PREFIX_PRODUCT_TYPES = [
-  { keys: ['bicak'], categorySlug: 'plastik-bicak' },
-  { keys: ['tabak'], categorySlug: 'plastik-tabak' },
-  { keys: ['bardak'], categorySlug: 'plastik-bardak' },
-  { keys: ['catal'], categorySlug: 'plastik-catal' },
-];
-
 /**
- * <renk>-plastik-<ürün>.png → ana fotoğraf
- * <renk>-plastik-<ürün>2.png / ürün-2 / ürün_2 / ürün 2 → 2. fotoğraf
- * Yazım: platik, bıcak, büyük harf, .jpg/.jpeg/.webp
+ * <renk>-<malzeme>-<ürün>.png → ana fotoğraf
+ * <renk>-<malzeme>-<ürün>2.png / ürün-2 / ürün_2 / ürün 2 → 2. fotoğraf
+ * Malzeme: plastik/platik, kagit, karton. Yazım: masaortusu = masa-ortusu, peçete, büyük harf.
  */
 export function parsePrefixPlainFilename(filename, opts = {}) {
   const requestedCategory = opts.categorySlug;
   const normalized = slugify(filename.replace(/\.[^.]+$/, ''));
 
-  const delim = normalized.match(/^(.*?)-(plastik|platik)-(.*)$/);
+  const delim = normalized.match(PREFIX_MATERIAL_RE);
   if (!delim || !delim[1] || !delim[3]) {
     return {
       filename,
       ok: false,
-      skipReason: 'prefix kuralına uymuyor (<renk>-plastik-<ürün>...)',
+      skipReason: 'prefix kuralına uymuyor (<renk>-<malzeme>-<ürün>...)',
       photoIndex: 1,
     };
   }
 
   const colorToken = delim[1];
+  const material = materialCanonical(delim[2]);
   let rest = delim[3];
   let photoIndex = 1;
   const packFromRest = parsePackSize(rest);
@@ -193,11 +228,18 @@ export function parsePrefixPlainFilename(filename, opts = {}) {
     }
   }
 
-  const typeSlug = slugify(rest);
-  const typeHit = PREFIX_PRODUCT_TYPES.find((t) => t.keys.some((k) => typeSlug === k || typeSlug.startsWith(`${k}-`)));
+  const typeHit = matchPrefixProduct(material, rest);
+  if (requestedCategory && typeHit && typeHit.categorySlug !== requestedCategory) {
+    return {
+      filename,
+      ok: false,
+      skipReason: `ürün türü "${typeHit.categorySlug}" bu klasörle uyuşmuyor`,
+      photoIndex,
+    };
+  }
   const categorySlug = requestedCategory || typeHit?.categorySlug;
   const cfg = PLAIN_CATEGORY_CONFIG[categorySlug];
-  if (!categorySlug || !cfg) {
+  if (!typeHit || !categorySlug || !cfg) {
     return {
       filename,
       ok: false,
@@ -218,6 +260,9 @@ export function parsePrefixPlainFilename(filename, opts = {}) {
 
   const packInferred = packFromRest == null;
   const packSize = packFromRest ?? cfg.defaultPack ?? 1;
+  const sizeMatch = rest.match(/(\d+)\s*x\s*(\d+)/i);
+  const size = sizeMatch ? `${sizeMatch[1]} x ${sizeMatch[2]} cm` : (cfg.defaultSize || null);
+  const sizeInferred = !sizeMatch && !!cfg.defaultSize;
   const variant = detectVariant(normalized, color.slug, categorySlug);
   const title = productTitleFor(color, categorySlug, variant);
   const skuStyle = cfg.skuStyle || 'pack';
@@ -237,6 +282,8 @@ export function parsePrefixPlainFilename(filename, opts = {}) {
     photoIndex,
     packSize,
     packInferred,
+    size,
+    sizeInferred,
     productName: title,
     slug,
     sku,
