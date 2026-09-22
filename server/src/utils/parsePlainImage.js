@@ -71,6 +71,7 @@ export function productTitleFor(color, categorySlug, variant) {
   if (categorySlug === 'karton-bardak') return `${color.name} Karton Bardak`;
   if (categorySlug === 'pecete') return `${color.name} Kağıt Peçete`;
   if (categorySlug === 'masa-ortusu') return `${color.name} Plastik Masa Örtüsü`;
+  if (categorySlug === 'masa-etegi') return `${color.name} Metalize Masa Eteği`;
   return `${color.name} ${catName}`;
 }
 
@@ -142,6 +143,7 @@ const PREFIX_MATERIALS = [
   { keys: ['plastik', 'platik'], canonical: 'plastik' },
   { keys: ['kagit'], canonical: 'kagit' },
   { keys: ['karton'], canonical: 'karton' },
+  { keys: ['metalize', 'metalise', 'metalik'], canonical: 'metalize' },
 ];
 
 const PREFIX_MATERIAL_RE = new RegExp(
@@ -157,6 +159,8 @@ const PREFIX_PRODUCT_TYPES = [
   { keys: ['pecete'], material: 'kagit', categorySlug: 'pecete' },
   { keys: ['tabak'], material: 'karton', categorySlug: 'karton-tabak' },
   { keys: ['bardak'], material: 'karton', categorySlug: 'karton-bardak' },
+  { keys: ['masaetegi'], material: 'metalize', categorySlug: 'masa-etegi' },
+  { keys: ['fonperdesi', 'fonperde'], material: 'metalize', categorySlug: 'fon-perdesi' },
 ];
 
 function materialCanonical(token) {

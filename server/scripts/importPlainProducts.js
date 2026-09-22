@@ -35,12 +35,13 @@ const TEXT_EXTS = new Set(['.txt', '.csv']);
 const SKIP_DOC_EXTS = new Set(['.xlsx', '.xls', '.docx', '.doc', '.pdf']);
 
 function parseArgs(argv) {
-  const out = { src: '', category: '', dryRun: false, naming: 'default' };
+  const out = { src: '', category: '', dryRun: false, naming: 'default', filter: '' };
   for (const arg of argv.slice(2)) {
     if (arg === '--dry-run') out.dryRun = true;
     else if (arg.startsWith('--src=')) out.src = arg.slice(6).replace(/^["']|["']$/g, '');
     else if (arg.startsWith('--category=')) out.category = arg.slice(11);
     else if (arg.startsWith('--naming=')) out.naming = arg.slice(9);
+    else if (arg.startsWith('--filter=')) out.filter = arg.slice(9);
   }
   return out;
 }
@@ -219,8 +220,8 @@ function parseTxtProducts(content, categorySlug, cfg) {
   return rows;
 }
 
-async function nextFonSeq(colorAbbr) {
-  const prefix = `GEN-FON-${colorAbbr}-`;
+async function nextSkuSeq(catAbbr, colorAbbr) {
+  const prefix = `GEN-${catAbbr}-${colorAbbr}-`;
   const existing = await prisma.product.findMany({
     where: { sku: { startsWith: prefix } },
     select: { sku: true },
@@ -247,6 +248,7 @@ async function findExistingProduct(row, categoryId, colorId) {
       categoryId,
       colorId,
       packSize: row.packSize,
+      NOT: { sku: { startsWith: 'UNI-' } },
     },
   });
 }
@@ -275,26 +277,27 @@ async function ensureColor(color) {
   });
 }
 
-const CATEGORY_SORT_ORDER = {
-  'karton-tabak': 1,
-  'plastik-tabak': 2,
-  'karton-bardak': 3,
-  'plastik-bardak': 4,
-  pecete: 5,
-  kurdan: 6,
-  'dogum-gunu-yazisi': 7,
-  flama: 8,
-  'fon-perdesi': 9,
-  'masa-ortusu': 10,
-  'plastik-catal': 11,
-  'plastik-bicak': 12,
-  balon: 13,
-  mum: 14,
+const CATEGORY_META = {
+  'karton-tabak': { sortOrder: 1, pluralName: 'Karton Tabaklar' },
+  'plastik-tabak': { sortOrder: 2, pluralName: 'Plastik Tabaklar' },
+  'karton-bardak': { sortOrder: 3, pluralName: 'Karton Bardaklar' },
+  'plastik-bardak': { sortOrder: 4, pluralName: 'Plastik Bardaklar' },
+  pecete: { sortOrder: 5 },
+  kurdan: { sortOrder: 6 },
+  'dogum-gunu-yazisi': { sortOrder: 7 },
+  flama: { sortOrder: 8 },
+  'fon-perdesi': { sortOrder: 9 },
+  'masa-ortusu': { sortOrder: 10 },
+  'masa-etegi': { sortOrder: 11, pluralName: 'Masa Etekleri' },
+  'plastik-catal': { sortOrder: 12 },
+  'plastik-bicak': { sortOrder: 13 },
+  balon: { sortOrder: 14 },
+  mum: { sortOrder: 15 },
 };
 
 async function applyCategorySort() {
-  for (const [s, sortOrder] of Object.entries(CATEGORY_SORT_ORDER)) {
-    await prisma.category.updateMany({ where: { slug: s }, data: { sortOrder } });
+  for (const [s, data] of Object.entries(CATEGORY_META)) {
+    await prisma.category.updateMany({ where: { slug: s }, data });
   }
 }
 
@@ -329,7 +332,7 @@ async function main() {
   }
 
   const srcDir = resolveSrc(args.src);
-  console.log(`[import:plain] kategori=${args.category} naming=${args.naming} src=${srcDir} dryRun=${args.dryRun}`);
+  console.log(`[import:plain] kategori=${args.category} naming=${args.naming} src=${srcDir} dryRun=${args.dryRun}${args.filter ? ` filter=${args.filter}` : ''}`);
 
   if (!fs.existsSync(srcDir)) {
     console.error('[import:plain] Kaynak klasör bulunamadı:', srcDir);
@@ -355,8 +358,13 @@ async function main() {
 
   const fileColorMap = loadFileColorMap();
   const allFiles = listFiles(srcDir);
-  const imageFiles = allFiles.filter((f) => IMAGE_EXTS.has(path.extname(f).toLowerCase()));
+  let imageFiles = allFiles.filter((f) => IMAGE_EXTS.has(path.extname(f).toLowerCase()));
   const otherFiles = allFiles.filter((f) => !IMAGE_EXTS.has(path.extname(f).toLowerCase()));
+  if (args.filter) {
+    const needle = slugify(args.filter);
+    imageFiles = imageFiles.filter((f) => slugify(path.basename(f)).includes(needle));
+    console.log(`[import:plain] --filter=${args.filter} → ${imageFiles.length} görsel`);
+  }
 
   const skipped = [];
   const guessed = [];
@@ -476,7 +484,16 @@ async function main() {
     if (!groups.has(row.groupKey)) groups.set(row.groupKey, []);
     groups.get(row.groupKey).push(row);
   }
-  for (const list of groups.values()) list.sort(gallerySort);
+  for (const list of groups.values()) {
+    list.sort(gallerySort);
+    const used = new Set();
+    for (const row of list) {
+      let idx = row.photoIndex || 1;
+      while (used.has(idx)) idx += 1;
+      row.photoIndex = idx;
+      used.add(idx);
+    }
+  }
 
   if (args.dryRun) {
     console.log(`[dry-run] ${rows.length} kayıt, ${groups.size} ürün. Yazma yok.`);
@@ -518,11 +535,11 @@ async function main() {
       const found = bySlug || byColorPack;
       if (found) {
         sku = found.sku.includes('undefined') && colorAbbr
-          ? skuForPlain(cfg, colorAbbr, primary.packSize, await nextFonSeq(colorAbbr))
+          ? skuForPlain(cfg, colorAbbr, primary.packSize, await nextSkuSeq(cfg.abbr, colorAbbr))
           : found.sku;
         primary.sku = sku;
       } else {
-        const seq = await nextFonSeq(colorAbbr);
+        const seq = await nextSkuSeq(cfg.abbr, colorAbbr);
         sku = skuForPlain(cfg, colorAbbr, primary.packSize, seq);
         primary.sku = sku;
       }
@@ -532,7 +549,9 @@ async function main() {
     const preserved = existing && PRESERVED_PLAIN_SKUS.has(existing.sku);
     const isNew = !existing;
 
-    const packKnown = prefixMode || cfg.defaultPack === 1 || list.some((r) => !r.packInferred);
+    const packKnown = cfg.omitPackAttribute
+      ? false
+      : prefixMode || cfg.defaultPack === 1 || list.some((r) => !r.packInferred);
     const unitLabel = packKnown || cfg.defaultPack === 1
       ? (primary.packSize > 1 ? unitLabelFor(primary.packSize) : 'adet')
       : 'paket';

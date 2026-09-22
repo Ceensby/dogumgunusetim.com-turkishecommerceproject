@@ -151,20 +151,23 @@ Tema sayfası ürün listesi **buradan** gelir (`themeId` alanından değil).
 
 ### Kategoriler
 
-| sort | slug | ad | unitLabel |
-|---|---|---|---|
-| 1 | karton-tabak | Karton Tabak | paket |
-| 2 | karton-bardak | Karton Bardak | paket |
-| 3 | pecete | Peçete | paket |
-| 4 | kurdan | Kürdan | paket |
-| 5 | dogum-gunu-yazisi | Doğum Günü Yazısı | adet |
-| 6 | flama | Flama | adet |
-| 7 | fon-perdesi | Fon Perdesi | adet |
-| 8 | masa-ortusu | Masa Örtüsü | adet |
-| 9 | plastik-catal | Plastik Çatal | paket |
-| 10 | plastik-bicak | Plastik Bıçak | paket |
-| 11 | balon | Balon | paket |
-| 12 | mum | Mum | adet |
+| sort | slug | ad | pluralName | unitLabel |
+|---|---|---|---|---|
+| 1 | karton-tabak | Karton Tabak | Karton Tabaklar | paket |
+| 2 | plastik-tabak | Plastik Tabak | Plastik Tabaklar | paket |
+| 3 | karton-bardak | Karton Bardak | Karton Bardaklar | paket |
+| 4 | plastik-bardak | Plastik Bardak | Plastik Bardaklar | paket |
+| 5 | pecete | Peçete | Peçeteler | paket |
+| 6 | kurdan | Kürdan | Kürdanlar | paket |
+| 7 | dogum-gunu-yazisi | Doğum Günü Yazısı | Yazılar | adet |
+| 8 | flama | Flama | Flamalar | adet |
+| 9 | fon-perdesi | Fon Perdesi | Fon Perdeleri | adet |
+| 10 | masa-ortusu | Masa Örtüsü | Masa Örtüleri | adet |
+| 11 | masa-etegi | Masa Eteği | Masa Etekleri | adet |
+| 12 | plastik-catal | Plastik Çatal | Çatallar | paket |
+| 13 | plastik-bicak | Plastik Bıçak | Bıçaklar | paket |
+| 14 | balon | Balon | Balonlar | paket |
+| 15 | mum | Mum | Mumlar | adet |
 
 Tema sayfasında **aktif ürünü olmayan kategori başlığı gösterilmez**. Yazı kategorisi Unicorn’da bu yüzden yok.
 
@@ -172,7 +175,7 @@ Tema sayfasında **aktif ürünü olmayan kategori başlığı gösterilmez**. Y
 
 Pembe `#FF6FA5`, Mavi, **Krem** `#F3E9D2` (eski Beyaz kaydı; slug `krem`, `/renk/beyaz` → `/renk/krem`), Altın, Lila, Mint, Kırmızı, Siyah, **Gümüş** `#C0C5CA`, **Rose Gold** `#C98973`, **Mor** `#7A1FA2`, **Yeşil** `#22A34A`, **Gökkuşağı** `#FF7A62`, **Sarı** `#F5C400`, **Turuncu** `#FF8A1A`, **Gri** `#9A9EA6`.
 
-Ürünü olanlar önce: Pembe (3), Mavi (2), Krem (1, çatal), Altın (2), Lila (1), Kırmızı (2), Siyah (3), Gümüş (2), Rose Gold, Mor, Yeşil (2), Gökkuşağı, Sarı, Turuncu, Gri. Ürünü olmayan: Mint. Beyaz satırı yok.
+Mint hariç bu renklerin çoğunda düz renk ürün var. `/renk/:slug` grupları kategori **slug** ile ayrılır (Karton Tabaklar ≠ Plastik Tabaklar). Beyaz satırı yok.
 
 ### Temalar
 
@@ -187,7 +190,7 @@ Yalnızca **Unicorn** (`/tema/unicorn`). Hero: `hero.webp` (masa banner, 1920×5
 | Unicorn Peçete | UNI-PCT-16 | Peçete | 16 | 75 | evet | Unicorn | — | evet | evet |
 | Unicorn Kürdan | UNI-KRD-10 | Kürdan | 10 | 45 | evet | Unicorn | — | evet | evet |
 | Unicorn Flama | UNI-FLM-01 | Flama | 1 | 59 | evet | Unicorn | — | evet | evet (iyi ki doğdun ana; yer tutucu 2.) |
-| Pembe Fon Perdesi | GEN-FON-PMB-01 | Fon Perdesi | 1 | 119 | evet | null | Pembe | evet | hayır (SVG) |
+| Pembe Fon Perdesi | GEN-FON-PMB-01 | Fon Perdesi | 1 | 119 | evet | null | Pembe | evet | evet (2 WebP; eski SVG yer tutucu) |
 | Unicorn Masa Örtüsü (120x180 cm) | UNI-MOR-01 | Masa Örtüsü | 1 | 75 | evet | Unicorn | — | evet | hayır |
 | Pembe Renk Plastik Çatal | GEN-CTL-PMB-25 | Plastik Çatal | 25 | 79 | evet | null | Pembe | evet | evet (2) |
 | Pembe Renk Plastik Bıçak | GEN-BCK-PMB-25 | Plastik Bıçak | 25 | 79 | evet | null | Pembe | evet | evet (2) |
@@ -211,7 +214,7 @@ Hepsi stok 100, fiyat **119 TL (varsayılan — kontrol et)**, pack 1, malzeme F
 | Mavi Fon Perdesi | GEN-FON-MAV-01 | Mavi |
 | Rose Gold Fon Perdesi | GEN-FON-RSG-01 | Rose Gold |
 
-Pembe Fon Perdesi (`GEN-FON-PMB-01`) Unicorn setine bağlı kalır; fotoğrafı yok, pembe hex SVG yer tutucu.
+Pembe Fon Perdesi (`GEN-FON-PMB-01`) Unicorn setine bağlı kalır. Ana görsel artık `duz-renk/pembe/pembe-fon-perdesi.webp` (2. foto var). Eski neden: seed/DB `isPrimary` olarak `/images/products/pembe-fon-perdesi.svg` yer tutucuyu tutuyordu; kopya ürün yoktu. Diskte kullanılmayan `client/public/images/products/pembe-fon-perdesi.svg` duruyor.
 
 ### Düz renk — Plastik Çatal (themeId null; pembe hariç ThemeProduct yok)
 
@@ -324,6 +327,56 @@ Fiyat **75 TL**, 1 adet, ölçü **120 x 180 cm** (üçü de varsayılan — kon
 
 Unicorn Masa Örtüsü (`UNI-MOR-01`) duruyor; kopya yok.
 
+### Düz renk — Metalize Masa Eteği (yeni kategori, sortOrder 11)
+
+Fiyat **99 TL (yer tutucu — kontrol et)**, 1 adet. Ölçü yok (dosya adında da yoktu, uydurulmadı). `themeId` null, ThemeProduct yok. Malzeme **Metalize folyo**. Paket özelliği yazılmaz.
+
+| Ad | SKU | Renk | pack | Foto |
+|---|---|---|---|---|
+| Altın Metalize Masa Eteği | GEN-MET-ALT-01 | Altın | 1 | 1 |
+| Gümüş Metalize Masa Eteği | GEN-MET-GMS-01 | Gümüş | 1 | 1 |
+| Kırmızı Metalize Masa Eteği | GEN-MET-KRM-01 | Kırmızı | 1 | 1 |
+| Mavi Metalize Masa Eteği | GEN-MET-MAV-01 | Mavi | 1 | 1 |
+| Mor Metalize Masa Eteği | GEN-MET-MOR-01 | Mor | 1 | 1 |
+| Pembe Metalize Masa Eteği | GEN-MET-PMB-01 | Pembe | 1 | 1 |
+| Rose Gold Metalize Masa Eteği | GEN-MET-RSG-01 | Rose Gold | 1 | 1 |
+| Siyah Metalize Masa Eteği | GEN-MET-SYH-01 | Siyah | 1 | 1 |
+| Yeşil Metalize Masa Eteği | GEN-MET-YSL-01 | Yeşil | 1 | 1 |
+
+### Düz renk — Karton Tabak (mevcut Karton Tabak kategorisi; plastik GEN-TBK değil)
+
+Fiyat **89 TL**, paket **8**. `themeId` null. Malzeme Karton. SKU `GEN-KTB-*` — Unicorn `UNI-TBK-08` ve plastik `GEN-TBK-*` ile çakışmaz.
+
+| Ad | SKU | Renk | pack | Foto |
+|---|---|---|---|---|
+| Altın Karton Tabak | GEN-KTB-ALT-08 | Altın | 8 | 2 |
+| Gümüş Karton Tabak | GEN-KTB-GMS-08 | Gümüş | 8 | 2 |
+| Kırmızı Karton Tabak | GEN-KTB-KRM-08 | Kırmızı | 8 | 2 |
+| Mavi Karton Tabak | GEN-KTB-MAV-08 | Mavi | 8 | 2 |
+| Mor Karton Tabak | GEN-KTB-MOR-08 | Mor | 8 | 1 |
+| Pembe Karton Tabak | GEN-KTB-PMB-08 | Pembe | 8 | 2 |
+| Sarı Karton Tabak | GEN-KTB-SAR-08 | Sarı | 8 | 2 |
+| Siyah Karton Tabak | GEN-KTB-SYH-08 | Siyah | 8 | 2 |
+| Turuncu Karton Tabak | GEN-KTB-TRN-08 | Turuncu | 8 | 2 |
+| Yeşil Karton Tabak | GEN-KTB-YSL-08 | Yeşil | 8 | 2 |
+
+### Düz renk — Karton Bardak (mevcut Karton Bardak kategorisi; plastik GEN-BRD değil)
+
+Kaynak klasör: `Parti malzemeleri/Lisanssız karton bardak` (tabak klasörüne karışık değil). Fiyat **69 TL**, paket **8**. `themeId` null. Malzeme Karton. SKU `GEN-KBR-*` — Unicorn `UNI-BRD-08` ve plastik `GEN-BRD-*` ile çakışmaz.
+
+| Ad | SKU | Renk | pack | Foto |
+|---|---|---|---|---|
+| Altın Karton Bardak | GEN-KBR-ALT-08 | Altın | 8 | 2 |
+| Gümüş Karton Bardak | GEN-KBR-GMS-08 | Gümüş | 8 | 2 |
+| Kırmızı Karton Bardak | GEN-KBR-KRM-08 | Kırmızı | 8 | 2 |
+| Mavi Karton Bardak | GEN-KBR-MAV-08 | Mavi | 8 | 2 |
+| Mor Karton Bardak | GEN-KBR-MOR-08 | Mor | 8 | 2 |
+| Pembe Karton Bardak | GEN-KBR-PMB-08 | Pembe | 8 | 2 |
+| Sarı Karton Bardak | GEN-KBR-SAR-08 | Sarı | 8 | 2 |
+| Siyah Karton Bardak | GEN-KBR-SYH-08 | Siyah | 8 | 2 |
+| Turuncu Karton Bardak | GEN-KBR-TRN-08 | Turuncu | 8 | 2 |
+| Yeşil Karton Bardak | GEN-KBR-YSL-08 | Yeşil | 8 | 2 |
+
 ---
 
 ## 6. Import script
@@ -374,20 +427,24 @@ npm run import:plain -- --src="Parti malzemeleri/Lisanssız Tabak" --category=pl
 npm run import:plain -- --src="Parti malzemeleri/Lisanssız Bardak" --category=plastik-bardak --naming=prefix
 npm run import:plain -- --src="Parti malzemeleri/Lisanssız Peçete" --category=pecete --naming=prefix
 npm run import:plain -- --src="Parti malzemeleri/Lisanssız Masa örtüsü" --category=masa-ortusu --naming=prefix
+npm run import:plain -- --src="Parti malzemeleri/Masa Eteği" --category=masa-etegi --naming=prefix
+npm run import:plain -- --src="Parti malzemeleri/Lisanssız karton tabak" --category=karton-tabak --naming=prefix
+npm run import:plain -- --src="Parti malzemeleri/Lisanssız karton bardak" --category=karton-bardak --naming=prefix
+npm run import:plain -- --src="Parti malzemeleri/Arka Fon perde" --category=fon-perdesi --naming=prefix --filter=pembe
 ```
 
 `--dry-run` yazmaz (kategori bile açmaz). Orijinaller silinmez/taşınmaz. İkinci çalıştırma SKU/slug ile upsert eder, kopya açmaz.
 
-`--naming=prefix` genel kalıp: `<renk>-<malzeme>-<ürün>[N].<uzantı>`. Malzeme: `plastik`/`platik`, `kagit`/`kağıt`, `karton`. Renk malzeme kelimesinden önceki her şeydir. `masaortusu` = `masa-ortusu`. `beyaz` → Krem. Görsellere bakılmaz. Klasörün %20’sinden fazlası kurala uymazsa o klasör iptal. Karton tabak/bardak (`<renk>-karton-tabak`) parser’da hazır, henüz çalıştırılmadı.
+`--naming=prefix` genel kalıp: `<renk>-<malzeme>-<ürün>[N].<uzantı>`. Malzeme: `plastik`/`platik`, `kagit`/`kağıt`, `karton`, `metalize`/`metalise`/`metalik`. Renk malzeme kelimesinden önceki her şeydir. `masaortusu` = `masa-ortusu`, `masaetegi` = `masa-etegi`. `beyaz` → Krem. Görsellere bakılmaz. Klasörün %20’sinden fazlası kurala uymazsa o klasör iptal. `--filter=` yalnızca ada uyan dosyaları sayar (pembe fon: diğer Arka Fon perde dosyaları skip oranına girmez).
 
-`plastik-tabak` / `plastik-bardak` yoksa oluşturulur (Karton Tabak/Bardak’ın hemen arkası, sortOrder 2 ve 4). Diğer slug’lar hâlâ mevcut kategori ister.
+`plastik-tabak` / `plastik-bardak` / `masa-etegi` yoksa oluşturulur (Karton Tabak/Bardak’ın hemen arkası; Masa Eteği Masa Örtüsü’nün hemen arkası, sortOrder 11). Diğer slug’lar hâlâ mevcut kategori ister.
 
 - Çıktı: `client/public/images/products/duz-renk/<renk-slug>/<ürün-slug>.webp` (+ `-md`, `-sm`), kare beyaz tuval
 - `themeId: null`, `colorId` dolu, **ThemeProduct yazılmaz**
 - Çakışan pembe ürünler (`GEN-FON-PMB-01`, `GEN-CTL-PMB-25`, `GEN-BCK-PMB-25`): yalnızca fotoğraf eklenir; fiyat ve Unicorn bağı korunur
 - Varsayılan modda renk dosya adında yoksa `plain-file-colors.json` veya görselden dominant renk
 - Fotoğraf yoksa rengin hexCode’u ile SVG yer tutucu
-- Kategori fiyatları: fon 119, çatal/bıçak 79, plastik tabak 89 (8’li), plastik bardak 69 (8’li), peçete 75 (16’lı), masa örtüsü 75 + 120x180 cm — dosyada yoksa varsayılan; kontrol et
+- Kategori fiyatları: fon 119, çatal/bıçak 79, plastik tabak 89 (8’li), plastik bardak 69 (8’li), peçete 75 (16’lı), masa örtüsü 75 + 120x180 cm, masa eteği 99 (ölçü yok), karton tabak 89 (8’li, GEN-KTB), karton bardak 69 (8’li, GEN-KBR) — dosyada yoksa varsayılan; kontrol et
 
 ---
 
@@ -402,10 +459,11 @@ npm run import:plain -- --src="Parti malzemeleri/Lisanssız Masa örtüsü" --ca
 - İyiki doğdun → flama kuralı; yazı ürünü pasif, temadan ve sepetten çıkarıldı
 - Fiyat güncellemesi; masa örtüsü adı + Ölçü özelliği
 - Pembe Fon Perdesi düz renk ürünü (çatal/bıçak mantığı), Unicorn setine ThemeProduct ile bağlı
-- Düz renk import: Fon perdesi + plastik çatal + bıçak + plastik tabak + plastik bardak + kağıt peçete + plastik masa örtüsü; `/renk/:slug` grupları `pluralName` ile (Tabaklar, Bardaklar, Peçeteler, Fon Perdeleri, Masa Örtüleri, Çatallar, Bıçaklar)
+- Düz renk import: Fon perdesi + plastik çatal + bıçak + plastik tabak + plastik bardak + kağıt peçete + plastik masa örtüsü + metalize masa eteği + karton tabak + karton bardak; `/renk/:slug` grupları kategori slug ile (Karton Tabaklar, Plastik Tabaklar, Karton Bardaklar, Plastik Bardaklar, Masa Etekleri ayrı)
 - **Galeri düzeltmesi:** DB/API 2+ `ProductImage` ve `-2.webp`/`-2-sm`/`-2-md` dosyaları zaten doğruydu. Md altı şeritte flex kaydırma (`flex: 0 0 100%`), tıklanır noktalar, lightbox okları, ürün değişince index sıfırlama eklendi. `sizedImageUrl` yalnızca `-sm`/`-md` ekini kırpar, `...-2.webp` sırasına dokunmaz.
 - Beyaz Color kaydı Krem’e güncellendi (`#F3E9D2`); `/renk/beyaz` yönlendirmesi
 - `import:plain --naming=prefix` `<renk>-<malzeme>-<ürün>[N]`; Lisanssız Peçete (16 görsel) + Lisanssız Masa örtüsü (15 görsel) %0 kural dışı. Yeni Color yok. `beyaz` masa örtüsü → Krem. Yedek: `peçete-masa örtüsü importu öncesi yedek`
+- Masa Eteği + Lisanssız karton tabak + Lisanssız karton bardak importu (dry-run %0 skip). Yeni Color yok. Pembe fon `--filter=pembe` ile mevcut `GEN-FON-PMB-01` ana görseli. Yedek: `masa eteği ve karton tabak-bardak importu öncesi yedek` (`c3e3f49`)
 - Boş kategori başlığı gizleme
 - Admin: tema/ürün/kategori/renk CRUD, tema-ürün ata + sürükle sıra, sipariş listesi, ayarlar, ürün özellikleri ekle/sil
 
@@ -418,18 +476,16 @@ npm run import:plain -- --src="Parti malzemeleri/Lisanssız Masa örtüsü" --ca
 Yer tutucu (jpg URL → svg veya harf kutusu):
 
 - Unicorn Masa Örtüsü
-- Pembe Fon Perdesi (pembe hex SVG)
 - Flama 2. galeri görseli (`unicorn-flama.jpg` diskte yok, svg düşer)
 
-Pembe çatal ve pembe bıçağın gerçek fotoğrafı var (`duz-renk/pembe/`).
+Pembe çatal, pembe bıçak ve pembe fon perdesinin gerçek fotoğrafı var (`duz-renk/pembe/`).
 
 ### Veri / katalog
 
 - 40 tema daha yok
 - `UNI-YZI-01` ölü kayıt (pasif, görselsiz, ThemeProduct yok) — silinebilir veya ileride gerçek yazı ürünü olarak açılır
 - Balon / mum kategorileri boş
-- Düz renk fiyatları/paket/ölçü varsayılan (fon 119, çatal/bıçak 79×25, plastik tabak 89×8, plastik bardak 69×8, peçete 75×16, masa örtüsü 75 + 120x180 cm) — kontrol et
-- Karton bardak/tabak klasörleri henüz import edilmedi (rastgele adlı; prefix `<renk>-karton-tabak` parser’da hazır)
+- Düz renk fiyatları/paket/ölçü varsayılan (fon 119, çatal/bıçak 79×25, plastik tabak 89×8, plastik bardak 69×8, peçete 75×16, masa örtüsü 75 + 120x180 cm, **masa eteği 99 yer tutucu**, karton tabak 89×8, karton bardak 69×8) — kontrol et
 
 ### Import / görsel
 
@@ -468,11 +524,14 @@ Parti malzemeleri/
   Lisanssız Bardak/     → plastik-bardak --naming=prefix (18 görsel)
   Lisanssız Peçete/     → pecete --naming=prefix (16 görsel)
   Lisanssız Masa örtüsü/ → masa-ortusu --naming=prefix (15 görsel)
+  Masa Eteği/            → masa-etegi --naming=prefix (9 görsel)
+  Lisanssız karton tabak/ → karton-tabak --naming=prefix (19 görsel; gumus jpg+png → 2 foto)
+  Lisanssız karton bardak/ → karton-bardak --naming=prefix (20 görsel; ayrı klasör)
 ```
 
-Komut: `npm run import:plain -- --src="<klasör>" --category=<slug> [--naming=prefix] [--dry-run]`
+Komut: `npm run import:plain -- --src="<klasör>" --category=<slug> [--naming=prefix] [--filter=] [--dry-run]`
 
-Kalan: Lisanssız karton bardak/tabak (rastgele ad). Parser `<renk>-karton-tabak/bardak` için hazır.
+Kalan düz renk klasörleri (bu turda dokunulmadı): diğer Parti malzemeleri alt klasörleri.
 
 ---
 
@@ -492,7 +551,10 @@ Mağaza bu oturumda Vite 5174’te de açılabilir; varsayılan 5173.
 - http://localhost:5173/renk/beyaz (krem’e yönlenir)
 - http://localhost:5173/urun/unicorn-karton-bardak-8li (2 foto, galeri)
 - http://localhost:5173/urun/altin-metalik-fon-perdesi (2 foto, galeri)
-- http://localhost:5173/urun/pembe-fon-perdesi
+- http://localhost:5173/urun/pembe-fon-perdesi (2 gerçek foto, Unicorn bağlı)
+- http://localhost:5173/urun/pembe-metalize-masa-etegi
+- http://localhost:5173/urun/pembe-karton-tabak-8li (2 foto)
+- http://localhost:5173/urun/pembe-karton-bardak-8li (2 foto)
 - http://localhost:5173/urun/pembe-renk-plastik-catal-25li
 - http://localhost:5173/urun/pembe-renk-plastik-bicak-25li (2 foto)
 - http://localhost:5173/urun/pembe-plastik-tabak-8li (2 foto)

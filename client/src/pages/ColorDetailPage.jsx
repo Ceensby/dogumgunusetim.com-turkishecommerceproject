@@ -20,17 +20,17 @@ export default function ColorDetailPage() {
   const groups = useMemo(() => {
     const map = new Map();
     for (const p of items) {
+      const key = p.category?.slug || 'diger';
       const title = p.category?.pluralName || p.category?.name || 'Diğer';
-      if (!map.has(title)) {
-        map.set(title, {
+      if (!map.has(key)) {
+        map.set(key, {
+          slug: key,
           title,
           sortOrder: p.category?.sortOrder ?? 99,
           items: [],
         });
       }
-      const group = map.get(title);
-      group.items.push(p);
-      group.sortOrder = Math.min(group.sortOrder, p.category?.sortOrder ?? 99);
+      map.get(key).items.push(p);
     }
     return [...map.values()].sort((a, b) => a.sortOrder - b.sortOrder);
   }, [items]);
@@ -44,7 +44,7 @@ export default function ColorDetailPage() {
       {query.isError && <ErrorState onRetry={query.refetch} />}
       {!query.isLoading && items.length === 0 && <EmptyState title="Bu renkte ürün yok" />}
       {groups.map((group) => (
-        <div key={group.title}>
+        <div key={group.slug}>
           <Typography variant="h5" sx={{ mb: 2, mt: 1 }}>
             {group.title}
           </Typography>

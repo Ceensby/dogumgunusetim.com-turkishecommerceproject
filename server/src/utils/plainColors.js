@@ -62,7 +62,7 @@ export const PLAIN_CATEGORY_CONFIG = {
   },
   'karton-tabak': {
     name: 'Karton Tabak',
-    abbr: 'TBK',
+    abbr: 'KTB',
     price: 89,
     defaultPack: 8,
     skuStyle: 'pack',
@@ -70,11 +70,20 @@ export const PLAIN_CATEGORY_CONFIG = {
   },
   'karton-bardak': {
     name: 'Karton Bardak',
-    abbr: 'BRD',
+    abbr: 'KBR',
     price: 69,
     defaultPack: 8,
     skuStyle: 'pack',
     material: 'Karton',
+  },
+  'masa-etegi': {
+    name: 'Metalize Masa Eteği',
+    abbr: 'MET',
+    price: 99,
+    defaultPack: 1,
+    skuStyle: 'seq',
+    material: 'Metalize folyo',
+    omitPackAttribute: true,
   },
   pecete: {
     name: 'Kağıt Peçete',
@@ -99,7 +108,7 @@ export const CREATABLE_PLAIN_CATEGORIES = {
   'plastik-tabak': {
     slug: 'plastik-tabak',
     name: 'Plastik Tabak',
-    pluralName: 'Tabaklar',
+    pluralName: 'Plastik Tabaklar',
     iconName: 'DinnerDining',
     unitLabel: 'paket',
     sortOrder: 2,
@@ -108,11 +117,20 @@ export const CREATABLE_PLAIN_CATEGORIES = {
   'plastik-bardak': {
     slug: 'plastik-bardak',
     name: 'Plastik Bardak',
-    pluralName: 'Bardaklar',
+    pluralName: 'Plastik Bardaklar',
     iconName: 'LocalCafe',
     unitLabel: 'paket',
     sortOrder: 4,
     description: 'Renkli plastik bardaklar',
+  },
+  'masa-etegi': {
+    slug: 'masa-etegi',
+    name: 'Masa Eteği',
+    pluralName: 'Masa Etekleri',
+    iconName: 'ViewWeek',
+    unitLabel: 'adet',
+    sortOrder: 11,
+    description: 'Metalize masa etekleri',
   },
 };
 export const PRESERVED_PLAIN_SKUS = new Set(['GEN-FON-PMB-01', 'GEN-CTL-PMB-25', 'GEN-BCK-PMB-25']);
