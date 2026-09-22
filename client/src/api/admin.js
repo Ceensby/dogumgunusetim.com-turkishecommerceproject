@@ -21,6 +21,12 @@ export const adminCreateCategory = (payload) => api.post('/admin/categories', pa
 export const adminUpdateCategory = (id, payload) => api.patch(`/admin/categories/${id}`, payload).then(unwrap);
 export const adminDeleteCategory = (id) => api.delete(`/admin/categories/${id}`).then(unwrap);
 
+export const adminCategoryGroups = () => api.get('/admin/category-groups').then(unwrap);
+export const adminCreateCategoryGroup = (payload) => api.post('/admin/category-groups', payload).then(unwrap);
+export const adminUpdateCategoryGroup = (id, payload) =>
+  api.patch(`/admin/category-groups/${id}`, payload).then(unwrap);
+export const adminDeleteCategoryGroup = (id) => api.delete(`/admin/category-groups/${id}`).then(unwrap);
+
 export const adminColors = () => api.get('/admin/colors').then(unwrap);
 export const adminCreateColor = (payload) => api.post('/admin/colors', payload).then(unwrap);
 export const adminUpdateColor = (id, payload) => api.patch(`/admin/colors/${id}`, payload).then(unwrap);

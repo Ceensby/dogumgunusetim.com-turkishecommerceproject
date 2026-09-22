@@ -5,13 +5,11 @@ export const PLAIN_COLORS = [
   { slug: 'mavi', name: 'Mavi', hexCode: '#4DA8FF', abbr: 'MAV', sortOrder: 2, aliases: ['mavi', 'blue', 'acik-mavi', 'açık mavi'] },
   { slug: 'krem', name: 'Krem', hexCode: '#F3E9D2', abbr: 'KRE', sortOrder: 3, aliases: ['krem', 'cream', 'ivory', 'bej', 'beige', 'beyaz', 'white'] },
   { slug: 'altin', name: 'Altın', hexCode: '#E5B94E', abbr: 'ALT', sortOrder: 4, aliases: ['altin', 'altın', 'gold'] },
-  { slug: 'lila', name: 'Lila', hexCode: '#C77DFF', abbr: 'LIL', sortOrder: 5, aliases: ['lila', 'lavender', 'lavanta'] },
-  { slug: 'mint', name: 'Mint', hexCode: '#7BE0C0', abbr: 'MNT', sortOrder: 6, aliases: ['mint', 'mint-yesil'] },
   { slug: 'kirmizi', name: 'Kırmızı', hexCode: '#F0483E', abbr: 'KRM', sortOrder: 7, aliases: ['kirmizi', 'kırmızı', 'red'] },
   { slug: 'siyah', name: 'Siyah', hexCode: '#1F1B2E', abbr: 'SYH', sortOrder: 8, aliases: ['siyah', 'black'] },
-  { slug: 'gumus', name: 'Gümüş', hexCode: '#C0C5CA', abbr: 'GMS', sortOrder: 9, aliases: ['gumus', 'gümüş', 'silver'] },
+  { slug: 'gumus', name: 'Gümüş', hexCode: '#C0C5CA', abbr: 'GMS', sortOrder: 9, aliases: ['gumus', 'gümüş', 'silver', 'gri', 'gray', 'grey'] },
   { slug: 'rose-gold', name: 'Rose Gold', hexCode: '#C98973', abbr: 'RSG', sortOrder: 10, aliases: ['rose-gold', 'rosegold', 'rose gold', 'roz-gold'] },
-  { slug: 'mor', name: 'Mor', hexCode: '#7A1FA2', abbr: 'MOR', sortOrder: 11, aliases: ['mor', 'purple', 'violet'] },
+  { slug: 'mor', name: 'Mor', hexCode: '#7A1FA2', abbr: 'MOR', sortOrder: 11, aliases: ['mor', 'purple', 'violet', 'lila', 'lavender', 'lavanta'] },
   { slug: 'yesil', name: 'Yeşil', hexCode: '#22A34A', abbr: 'YSL', sortOrder: 12, aliases: ['yesil', 'yeşil', 'green'] },
   { slug: 'gokkusagi', name: 'Gökkuşağı', hexCode: '#FF7A62', abbr: 'GKK', sortOrder: 13, aliases: ['gokkusagi', 'gökkuşağı', 'rainbow'] },
   { slug: 'sari', name: 'Sarı', hexCode: '#F5C400', abbr: 'SAR', sortOrder: 14, aliases: ['sari', 'sarı', 'yellow'] },
@@ -113,6 +111,7 @@ export const CREATABLE_PLAIN_CATEGORIES = {
     unitLabel: 'paket',
     sortOrder: 2,
     description: 'Renkli plastik tabaklar',
+    groupSlug: 'plastikler',
   },
   'plastik-bardak': {
     slug: 'plastik-bardak',
@@ -122,6 +121,7 @@ export const CREATABLE_PLAIN_CATEGORIES = {
     unitLabel: 'paket',
     sortOrder: 4,
     description: 'Renkli plastik bardaklar',
+    groupSlug: 'plastikler',
   },
   'masa-etegi': {
     slug: 'masa-etegi',
@@ -131,6 +131,7 @@ export const CREATABLE_PLAIN_CATEGORIES = {
     unitLabel: 'adet',
     sortOrder: 11,
     description: 'Metalize masa etekleri',
+    groupSlug: 'masa-ustu',
   },
 };
 export const PRESERVED_PLAIN_SKUS = new Set(['GEN-FON-PMB-01', 'GEN-CTL-PMB-25', 'GEN-BCK-PMB-25']);

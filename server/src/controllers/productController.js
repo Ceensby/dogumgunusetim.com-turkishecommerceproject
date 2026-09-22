@@ -4,7 +4,7 @@ import { serialize } from '../utils/response.js';
 const productInclude = {
   images: { orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }] },
   attributes: { orderBy: { sortOrder: 'asc' } },
-  category: true,
+  category: { include: { group: true } },
   color: true,
   theme: {
     select: { id: true, slug: true, name: true, title: true, primaryColor: true, thumbnail: true },
@@ -95,8 +95,8 @@ export async function getProductBySlug(slug) {
       include: {
         product: {
           include: {
-            images: { orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }], take: 1 },
-            category: true,
+            images: { take: 1, orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }] },
+            category: { include: { group: true } },
           },
         },
       },
@@ -117,9 +117,10 @@ export async function listByCategorySlug(slug, query) {
 }
 
 export async function listByColorSlug(slug, query) {
-  const resolved = slug === 'beyaz' ? 'krem' : slug;
+  const aliases = { beyaz: 'krem', lila: 'mor', gri: 'gumus' };
+  const resolved = aliases[slug] || slug;
   const color = await prisma.color.findUnique({ where: { slug: resolved } });
   if (!color || !color.isActive) return null;
-  const data = await listProducts({ ...query, colorId: color.id });
+  const data = await listProducts({ ...query, colorId: color.id, limit: query.limit || 48 });
   return { color: serialize(color), ...data };
 }

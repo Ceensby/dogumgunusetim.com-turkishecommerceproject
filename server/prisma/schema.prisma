@@ -60,8 +60,23 @@ model Category {
   sortOrder   Int     @default(0)
   isActive    Boolean @default(true)
   description String?
+  groupId     Int?
 
   products Product[]
+  group    CategoryGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
+
+  @@index([groupId])
+}
+
+model CategoryGroup {
+  id        Int     @id @default(autoincrement())
+  name      String
+  slug      String  @unique
+  iconName  String?
+  sortOrder Int     @default(0)
+  isActive  Boolean @default(true)
+
+  categories Category[]
 }
 
 model Color {

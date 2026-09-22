@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 import { defaultAttributes, plainProductAttributes } from '../src/utils/productAttributes.js';
 import { seedColorRows, PLAIN_CATEGORY_CONFIG } from '../src/utils/plainColors.js';
+import { CATEGORY_GROUPS, CATEGORY_GROUP_BY_SLUG } from '../src/utils/categoryGroups.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -70,13 +71,28 @@ const SETTINGS = {
     'Bu sözleşme, 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği kapsamında düzenlenmiştir. Satıcı: dogumgunusetim.com',
 };
 
-async function upsertCategories() {
+async function upsertCategoryGroups() {
+  const map = {};
+  for (const group of CATEGORY_GROUPS) {
+    const row = await prisma.categoryGroup.upsert({
+      where: { slug: group.slug },
+      update: group,
+      create: { ...group, isActive: true },
+    });
+    map[group.slug] = row;
+  }
+  return map;
+}
+
+async function upsertCategories(groups) {
   const map = {};
   for (const cat of CATEGORIES) {
+    const groupSlug = CATEGORY_GROUP_BY_SLUG[cat.slug];
+    const data = { ...cat, groupId: groupSlug ? groups[groupSlug]?.id ?? null : null };
     const row = await prisma.category.upsert({
       where: { slug: cat.slug },
-      update: cat,
-      create: cat,
+      update: data,
+      create: data,
     });
     map[cat.slug] = row;
   }
@@ -114,6 +130,33 @@ async function upsertColors() {
     map[color.slug] = row;
   }
   return map;
+}
+
+async function deleteProductBySku(sku) {
+  const product = await prisma.product.findUnique({ where: { sku } });
+  if (!product) return;
+  await prisma.cartItem.deleteMany({ where: { productId: product.id } });
+  await prisma.themeProduct.deleteMany({ where: { productId: product.id } });
+  await prisma.product.delete({ where: { id: product.id } });
+  console.log(`[seed] ürün silindi: ${sku}`);
+}
+
+async function migrateLegacyColors() {
+  await deleteProductBySku('GEN-CTL-SYH-10');
+  await deleteProductBySku('GEN-CTL-GRI-25');
+  await deleteProductBySku('GEN-CTL-LIL-25');
+  for (const slug of ['lila', 'gri', 'mint']) {
+    const color = await prisma.color.findUnique({ where: { slug } });
+    if (!color) continue;
+    const leftover = await prisma.product.count({ where: { colorId: color.id } });
+    if (leftover === 0) {
+      await prisma.color.delete({ where: { id: color.id } });
+      console.log(`[seed] renk silindi: ${slug}`);
+    } else if (slug === 'mint') {
+      await prisma.color.update({ where: { id: color.id }, data: { isActive: false } });
+      console.log(`[seed] mint pasif (${leftover} ürün)`);
+    }
+  }
 }
 
 async function upsertSettings() {
@@ -468,9 +511,12 @@ async function upsertUnicorn(categories, colors) {
   return theme;
 }
 
-function duzUrls(colorSlug, slug, extra = 0) {
+function duzUrls(colorSlug, slug, extra = 0, extraUrls = []) {
   const names = [slug, ...Array.from({ length: extra }, (_, i) => `${slug}-${i + 2}`)];
-  return names.map((name) => `/images/products/duz-renk/${colorSlug}/${name}.webp`);
+  return [
+    ...names.map((name) => `/images/products/duz-renk/${colorSlug}/${name}.webp`),
+    ...extraUrls,
+  ];
 }
 
 async function upsertPlainCatalog(categories, colors) {
@@ -486,14 +532,12 @@ async function upsertPlainCatalog(categories, colors) {
     { sku: 'GEN-FON-RSG-01', slug: 'rose-gold-fon-perdesi', name: 'Rose Gold Fon Perdesi', color: 'rose-gold', category: 'fon-perdesi', price: 119, packSize: 1, unitLabel: 'adet', packKnown: true, extra: 1 },
     { sku: 'GEN-CTL-MAV-25', slug: 'mavi-plastik-catal-25li', name: 'Mavi Plastik Çatal', color: 'mavi', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: 'paket', packKnown: false, extra: 1 },
     { sku: 'GEN-CTL-SAR-25', slug: 'sari-plastik-catal-25li', name: 'Sarı Plastik Çatal', color: 'sari', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: "25'li paket", packKnown: true, extra: 1 },
-    { sku: 'GEN-CTL-SYH-25', slug: 'siyah-plastik-catal-25li', name: 'Siyah Plastik Çatal', color: 'siyah', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: "25'li paket", packKnown: true, extra: 0 },
-    { sku: 'GEN-CTL-SYH-10', slug: 'siyah-plastik-catal-10li', name: 'Siyah Plastik Çatal', color: 'siyah', category: 'plastik-catal', price: 79, packSize: 10, unitLabel: "10'lu paket", packKnown: true, extra: 0 },
-    { sku: 'GEN-CTL-GMS-25', slug: 'gumus-plastik-catal-25li', name: 'Gümüş Plastik Çatal', color: 'gumus', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: 'paket', packKnown: false, extra: 0 },
+    { sku: 'GEN-CTL-SYH-25', slug: 'siyah-plastik-catal-25li', name: 'Siyah Plastik Çatal', color: 'siyah', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: "25'li paket", packKnown: true, extra: 0, extraUrls: ['/images/products/duz-renk/siyah/siyah-plastik-catal-10li.webp'] },
+    { sku: 'GEN-CTL-GMS-25', slug: 'gumus-plastik-catal-25li', name: 'Gümüş Plastik Çatal', color: 'gumus', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: 'paket', packKnown: false, extra: 0, extraUrls: ['/images/products/duz-renk/gri/gri-plastik-catal-25li.webp'] },
     { sku: 'GEN-CTL-YSL-25', slug: 'yesil-plastik-catal-25li', name: 'Yeşil Plastik Çatal', color: 'yesil', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: 'paket', packKnown: false, extra: 1 },
     { sku: 'GEN-CTL-TRN-25', slug: 'turuncu-plastik-catal-25li', name: 'Turuncu Plastik Çatal', color: 'turuncu', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: 'paket', packKnown: false, extra: 1 },
-    { sku: 'GEN-CTL-LIL-25', slug: 'lila-plastik-catal-25li', name: 'Lila Plastik Çatal', color: 'lila', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: 'paket', packKnown: false, extra: 1 },
+    { sku: 'GEN-CTL-MOR-25', slug: 'mor-plastik-catal-25li', name: 'Mor Plastik Çatal', color: 'mor', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: 'paket', packKnown: false, extra: 1, imageDir: 'lila', imageSlug: 'lila-plastik-catal-25li' },
     { sku: 'GEN-CTL-KRE-25', slug: 'krem-plastik-catal-25li', name: 'Krem Plastik Çatal', color: 'krem', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: 'paket', packKnown: false, extra: 1 },
-    { sku: 'GEN-CTL-GRI-25', slug: 'gri-plastik-catal-25li', name: 'Gri Plastik Çatal', color: 'gri', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: 'paket', packKnown: false, extra: 0 },
     { sku: 'GEN-CTL-KRM-25', slug: 'kirmizi-plastik-catal-25li', name: 'Kırmızı Plastik Çatal', color: 'kirmizi', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: 'paket', packKnown: false, extra: 1 },
     { sku: 'GEN-CTL-ALT-25', slug: 'altin-plastik-catal-25li', name: 'Altın Plastik Çatal', color: 'altin', category: 'plastik-catal', price: 79, packSize: 25, unitLabel: 'paket', packKnown: false, extra: 1 },
     { sku: 'GEN-BCK-ALT-25', slug: 'altin-plastik-bicak-25li', name: 'Altın Plastik Bıçak', color: 'altin', category: 'plastik-bicak', price: 79, packSize: 25, unitLabel: "25'li paket", packKnown: true, extra: 1 },
@@ -618,7 +662,7 @@ async function upsertPlainCatalog(categories, colors) {
       }).map((a) => ({ ...a, productId: product.id })),
     });
 
-    const images = duzUrls(color.slug, row.slug, row.extra);
+    const images = duzUrls(row.imageDir || color.slug, row.imageSlug || row.slug, row.extra, row.extraUrls || []);
     await prisma.productImage.deleteMany({ where: { productId: product.id } });
     await prisma.productImage.createMany({
       data: images.map((url, i) => ({
@@ -650,9 +694,11 @@ async function syncCarts() {
 
 async function main() {
   console.log('[seed] başlıyor');
-  const categories = await upsertCategories();
+  const groups = await upsertCategoryGroups();
+  const categories = await upsertCategories(groups);
   await migrateBeyazToKrem();
   const colors = await upsertColors();
+  await migrateLegacyColors();
   await upsertSettings();
   await upsertAdmin();
   await upsertUnicorn(categories, colors);

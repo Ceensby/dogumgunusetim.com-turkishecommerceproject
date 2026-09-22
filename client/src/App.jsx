@@ -86,6 +86,8 @@ export default function App() {
         <Route path="/kategori/:slug" element={<CategoryPage />} />
         <Route path="/renkler" element={<ColorsPage />} />
         <Route path="/renk/beyaz" element={<Navigate to="/renk/krem" replace />} />
+        <Route path="/renk/lila" element={<Navigate to="/renk/mor" replace />} />
+        <Route path="/renk/gri" element={<Navigate to="/renk/gumus" replace />} />
         <Route path="/renk/:slug" element={<ColorDetailPage />} />
         <Route path="/arama" element={<SearchPage />} />
         <Route path="/sepet" element={<CartPage />} />

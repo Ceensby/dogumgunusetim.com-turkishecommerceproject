@@ -64,6 +64,7 @@ export async function listCategories(_req, res, next) {
     const items = await prisma.category.findMany({
       where: { isActive: true },
       orderBy: { sortOrder: 'asc' },
+      include: { group: true },
     });
     return ok(res, serialize(items));
   } catch (error) {

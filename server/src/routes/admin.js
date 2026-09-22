@@ -34,6 +34,11 @@ router.post('/categories', crud.createCategory);
 router.patch('/categories/:id', crud.updateCategory);
 router.delete('/categories/:id', crud.deleteCategory);
 
+router.get('/category-groups', crud.listCategoryGroups);
+router.post('/category-groups', crud.createCategoryGroup);
+router.patch('/category-groups/:id', crud.updateCategoryGroup);
+router.delete('/category-groups/:id', crud.deleteCategoryGroup);
+
 router.get('/colors', crud.listColors);
 router.post('/colors', crud.createColor);
 router.patch('/colors/:id', crud.updateColor);

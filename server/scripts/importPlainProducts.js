@@ -306,7 +306,13 @@ async function ensureCategory(slug) {
   if (!existing) {
     const spec = CREATABLE_PLAIN_CATEGORIES[slug];
     if (!spec) return null;
-    existing = await prisma.category.create({ data: { ...spec, isActive: true } });
+    const { groupSlug, ...rest } = spec;
+    const group = groupSlug
+      ? await prisma.categoryGroup.findUnique({ where: { slug: groupSlug } })
+      : null;
+    existing = await prisma.category.create({
+      data: { ...rest, groupId: group?.id ?? null, isActive: true },
+    });
     console.log(`[import:plain] kategori oluşturuldu: ${spec.name}`);
   }
   await applyCategorySort();

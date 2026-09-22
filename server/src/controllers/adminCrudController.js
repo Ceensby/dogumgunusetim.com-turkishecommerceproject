@@ -74,9 +74,18 @@ const categorySchema = z.object({
   pluralName: z.string().optional().nullable(),
   iconName: z.string().optional().nullable(),
   unitLabel: z.string().optional().nullable(),
-  sortOrder: z.number().int().optional(),
+  sortOrder: z.coerce.number().int().optional(),
   isActive: z.boolean().optional(),
   description: z.string().optional().nullable(),
+  groupId: z.preprocess(emptyToNull, z.coerce.number().int().positive().nullable().optional()),
+});
+
+const categoryGroupSchema = z.object({
+  name: z.string().min(1),
+  slug: z.string().optional().nullable(),
+  iconName: z.string().optional().nullable(),
+  sortOrder: z.coerce.number().int().optional(),
+  isActive: z.boolean().optional(),
 });
 
 const colorSchema = z.object({
@@ -277,7 +286,10 @@ export async function deleteProduct(req, res, next) {
 
 export async function listCategories(_req, res, next) {
   try {
-    const items = await prisma.category.findMany({ orderBy: { sortOrder: 'asc' } });
+    const items = await prisma.category.findMany({
+      orderBy: { sortOrder: 'asc' },
+      include: { group: true },
+    });
     return ok(res, serialize(items));
   } catch (error) {
     next(error);
@@ -318,6 +330,58 @@ export async function deleteCategory(req, res, next) {
     }
     await prisma.category.delete({ where: { id: Number(req.params.id) } });
     return ok(res, { id: Number(req.params.id) }, 'Kategori silindi.');
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listCategoryGroups(_req, res, next) {
+  try {
+    const items = await prisma.categoryGroup.findMany({
+      orderBy: { sortOrder: 'asc' },
+      include: { _count: { select: { categories: true } } },
+    });
+    return ok(res, serialize(items));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function createCategoryGroup(req, res, next) {
+  try {
+    const body = categoryGroupSchema.parse(req.body);
+    const item = await prisma.categoryGroup.create({
+      data: { ...body, slug: slugify(body.slug || body.name), isActive: body.isActive ?? true },
+    });
+    return ok(res, serialize(item), 'Grup oluşturuldu.', 201);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateCategoryGroup(req, res, next) {
+  try {
+    const body = categoryGroupSchema.partial().parse(req.body);
+    if (body.slug) body.slug = slugify(body.slug);
+    const item = await prisma.categoryGroup.update({
+      where: { id: Number(req.params.id) },
+      data: body,
+    });
+    return ok(res, serialize(item), 'Grup güncellendi.');
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteCategoryGroup(req, res, next) {
+  try {
+    const id = Number(req.params.id);
+    const count = await prisma.category.count({ where: { groupId: id } });
+    if (count > 0) {
+      await prisma.category.updateMany({ where: { groupId: id }, data: { groupId: null } });
+    }
+    await prisma.categoryGroup.delete({ where: { id } });
+    return ok(res, { id }, 'Grup silindi.');
   } catch (error) {
     next(error);
   }
