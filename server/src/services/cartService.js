@@ -5,7 +5,7 @@ import { serialize, toNumber } from '../utils/response.js';
 import { summarizeItems } from './pricingService.js';
 
 const productInclude = {
-  images: { orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }] },
+  images: { orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }], take: 1 },
   category: true,
   color: true,
 };

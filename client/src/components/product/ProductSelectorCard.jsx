@@ -8,9 +8,10 @@ import PriceText from '../common/PriceText';
 import { formatPrice } from '../../utils/formatPrice';
 import { lineTotal } from '../../utils/calcSet';
 import { TR } from '../../constants/tr';
+import { primaryImageUrl } from '../../utils/imageUrl';
 
 export default function ProductSelectorCard({ product, quantity, onQuantity, accent, themeSlug }) {
-  const img = product.images?.[0]?.url;
+  const img = primaryImageUrl(product);
   const soldOut = product.trackStock && product.stock <= 0;
   const max = product.trackStock ? product.stock : 99;
   const included = quantity > 0;

@@ -48,6 +48,8 @@ export function plainProductAttributes(opts = {}) {
     rows.push({ label: 'Malzeme', value: material, sortOrder: order });
     order += 1;
   }
+  rows.push({ label: 'Kullanım', value: 'Tek kullanımlık', sortOrder: order });
+  order += 1;
   if (opts.size) {
     rows.push({ label: 'Ölçü', value: opts.size, sortOrder: order });
   }

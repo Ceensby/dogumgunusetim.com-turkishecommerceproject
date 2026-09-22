@@ -23,6 +23,16 @@ import CelebrationIcon from '@mui/icons-material/Celebration';
 import TuneIcon from '@mui/icons-material/Tune';
 import HomeIcon from '@mui/icons-material/Home';
 import { fetchCategories, fetchColors, fetchThemes } from '../api/catalog';
+
+function isLightHex(hex) {
+  const h = String(hex || '').replace('#', '');
+  if (h.length !== 6) return false;
+  const n = parseInt(h, 16);
+  const r = (n >> 16) & 255;
+  const g = (n >> 8) & 255;
+  const b = n & 255;
+  return (r * 299 + g * 587 + b * 114) / 1000 > 200;
+}
 import { TR, PAGE_SIZE } from '../constants/tr';
 import { useSettings } from '../hooks/useTheme';
 import SeoHead from '../components/common/SeoHead';
@@ -203,7 +213,7 @@ export default function HomePage() {
                 borderRadius: '50%',
                 bgcolor: c.hexCode,
                 border: '2px solid',
-                borderColor: c.hexCode === '#FFFFFF' ? 'divider' : 'transparent',
+                borderColor: isLightHex(c.hexCode) ? 'divider' : 'transparent',
                 boxShadow: 1,
               }}
             />

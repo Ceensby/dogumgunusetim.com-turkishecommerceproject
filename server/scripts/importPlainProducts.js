@@ -14,6 +14,7 @@ import {
 } from '../src/utils/plainColors.js';
 import {
   parsePlainImageFilename,
+  parsePrefixPlainFilename,
   nearestColor,
   hexToRgb,
   skuForPlain,
@@ -33,11 +34,12 @@ const TEXT_EXTS = new Set(['.txt', '.csv']);
 const SKIP_DOC_EXTS = new Set(['.xlsx', '.xls', '.docx', '.doc', '.pdf']);
 
 function parseArgs(argv) {
-  const out = { src: '', category: '', dryRun: false };
+  const out = { src: '', category: '', dryRun: false, naming: 'default' };
   for (const arg of argv.slice(2)) {
     if (arg === '--dry-run') out.dryRun = true;
     else if (arg.startsWith('--src=')) out.src = arg.slice(6).replace(/^["']|["']$/g, '');
     else if (arg.startsWith('--category=')) out.category = arg.slice(11);
+    else if (arg.startsWith('--naming=')) out.naming = arg.slice(9);
   }
   return out;
 }
@@ -74,18 +76,30 @@ function listFiles(dir) {
   return files;
 }
 
-function printTable(rows) {
-  const cols = ['Kaynak dosya', 'Kategori', 'Renk', 'Varyant/özellik', 'Paket adedi', 'Oluşacak ürün adı', 'SKU', 'Fotoğraf var mı'];
-  const data = rows.map((r) => [
-    r.filename,
-    r.categoryName,
-    r.color?.name || '?',
-    r.variant || '—',
-    r.packInferred ? `${r.packSize} (varsayılan)` : String(r.packSize),
-    r.productName,
-    r.sku || '—',
-    r.hasPhoto ? 'evet' : 'hayır',
-  ]);
+function printTable(rows, naming) {
+  const prefix = naming === 'prefix';
+  const cols = prefix
+    ? ['Dosya', 'Renk', 'Fotoğraf sırası', 'Ürün adı', 'SKU', 'Yeni/mevcut']
+    : ['Kaynak dosya', 'Kategori', 'Renk', 'Varyant/özellik', 'Paket adedi', 'Oluşacak ürün adı', 'SKU', 'Fotoğraf var mı'];
+  const data = rows.map((r) => (prefix
+    ? [
+      r.filename,
+      r.color?.name || '?',
+      String(r.photoIndex || 1),
+      r.productName,
+      r.sku || '—',
+      r.existingLabel || '?',
+    ]
+    : [
+      r.filename,
+      r.categoryName,
+      r.color?.name || '?',
+      r.variant || '—',
+      r.packInferred ? `${r.packSize} (varsayılan)` : String(r.packSize),
+      r.productName,
+      r.sku || '—',
+      r.hasPhoto ? 'evet' : 'hayır',
+    ]));
   const widths = cols.map((c, i) => Math.max(c.length, ...data.map((d) => String(d[i]).length)));
   const line = (cells) => cells.map((c, i) => String(c).padEnd(widths[i])).join(' | ');
   console.log(line(cols));
@@ -238,8 +252,11 @@ async function findExistingProduct(row, categoryId, colorId) {
 }
 
 function gallerySort(a, b) {
-  const aNamed = a.colorFrom === 'filename' ? 0 : 1;
-  const bNamed = b.colorFrom === 'filename' ? 0 : 1;
+  const aIdx = a.photoIndex || 0;
+  const bIdx = b.photoIndex || 0;
+  if (aIdx && bIdx && aIdx !== bIdx) return aIdx - bIdx;
+  const aNamed = a.colorFrom === 'filename' || a.colorFrom === 'prefix' ? 0 : 1;
+  const bNamed = b.colorFrom === 'filename' || b.colorFrom === 'prefix' ? 0 : 1;
   if (aNamed !== bNamed) return aNamed - bNamed;
   return a.filename.localeCompare(b.filename, 'tr');
 }
@@ -261,8 +278,12 @@ async function ensureColor(color) {
 async function main() {
   const args = parseArgs(process.argv);
   if (!args.src || !args.category) {
-    console.error('Kullanım: npm run import:plain -- --src="<klasör yolu>" --category=<kategori-slug> [--dry-run]');
+    console.error('Kullanım: npm run import:plain -- --src="<klasör yolu>" --category=<kategori-slug> [--naming=prefix] [--dry-run]');
     console.error('Kategoriler:', Object.keys(PLAIN_CATEGORY_CONFIG).join(', '));
+    process.exit(1);
+  }
+  if (args.naming !== 'default' && args.naming !== 'prefix') {
+    console.error('[import:plain] --naming default veya prefix olmalı');
     process.exit(1);
   }
 
@@ -273,7 +294,7 @@ async function main() {
   }
 
   const srcDir = resolveSrc(args.src);
-  console.log(`[import:plain] kategori=${args.category} src=${srcDir} dryRun=${args.dryRun}`);
+  console.log(`[import:plain] kategori=${args.category} naming=${args.naming} src=${srcDir} dryRun=${args.dryRun}`);
 
   if (!fs.existsSync(srcDir)) {
     console.error('[import:plain] Kaynak klasör bulunamadı:', srcDir);
@@ -293,41 +314,56 @@ async function main() {
 
   const skipped = [];
   const guessed = [];
+  const whiteMapped = [];
   const rows = [];
+  const prefixMode = args.naming === 'prefix';
 
   for (const full of imageFiles) {
     const filename = path.basename(full);
-    const parsed = parsePlainImageFilename(filename, {
-      categorySlug: args.category,
-      fileColorMap,
-    });
-    parsed.fullPath = full;
-    parsed.hasPhoto = true;
-
-    if (!parsed.color) {
-      try {
-        const detected = await detectColorFromImage(full);
-        if (detected) {
-          parsed.color = detected;
-          parsed.colorFrom = 'image';
-          parsed.variant = parsed.variant;
-          parsed.productName = productTitleFor(detected, args.category, parsed.variant);
-          parsed.slug = productSlugForPlain(parsed.productName, parsed.packSize, cfg.skuStyle);
-          parsed.sku = skuForPlain(cfg, detected.abbr, parsed.packSize, 1);
-          parsed.groupKey = groupKeyFor({
-            categorySlug: args.category,
-            colorSlug: detected.slug,
-            variant: parsed.variant,
-            packSize: parsed.packSize,
-          });
-          guessed.push(`${filename} → ${detected.name} (görselden)`);
-        }
-      } catch (err) {
-        skipped.push(`${filename} — görsel okunamadı: ${err.message}`);
+    let parsed;
+    if (prefixMode) {
+      parsed = parsePrefixPlainFilename(filename, { categorySlug: args.category });
+      parsed.fullPath = full;
+      parsed.hasPhoto = true;
+      if (!parsed.ok) {
+        skipped.push(`${filename} — ${parsed.skipReason}`);
         continue;
       }
-    } else if (parsed.colorFrom === 'map' || parsed.colorFrom === 'image') {
-      guessed.push(`${filename} → ${parsed.color.name} (${parsed.colorFrom === 'map' ? 'görsel eşlemesi' : 'görselden'})`);
+      if (parsed.mappedFromWhite) whiteMapped.push(`${filename} → Krem`);
+      if (parsed.invented) guessed.push(`${filename} → ${parsed.color.name} (yeni renk, prefix)`);
+    } else {
+      parsed = parsePlainImageFilename(filename, {
+        categorySlug: args.category,
+        fileColorMap,
+      });
+      parsed.fullPath = full;
+      parsed.hasPhoto = true;
+      parsed.photoIndex = parsed.photoIndex || 1;
+
+      if (!parsed.color) {
+        try {
+          const detected = await detectColorFromImage(full);
+          if (detected) {
+            parsed.color = detected;
+            parsed.colorFrom = 'image';
+            parsed.productName = productTitleFor(detected, args.category, parsed.variant);
+            parsed.slug = productSlugForPlain(parsed.productName, parsed.packSize, cfg.skuStyle);
+            parsed.sku = skuForPlain(cfg, detected.abbr, parsed.packSize, 1);
+            parsed.groupKey = groupKeyFor({
+              categorySlug: args.category,
+              colorSlug: detected.slug,
+              variant: parsed.variant,
+              packSize: parsed.packSize,
+            });
+            guessed.push(`${filename} → ${detected.name} (görselden)`);
+          }
+        } catch (err) {
+          skipped.push(`${filename} — görsel okunamadı: ${err.message}`);
+          continue;
+        }
+      } else if (parsed.colorFrom === 'map' || parsed.colorFrom === 'image') {
+        guessed.push(`${filename} → ${parsed.color.name} (${parsed.colorFrom === 'map' ? 'görsel eşlemesi' : 'görselden'})`);
+      }
     }
 
     if (!parsed.color) {
@@ -337,21 +373,28 @@ async function main() {
     rows.push(parsed);
   }
 
-  for (const full of otherFiles) {
-    const ext = path.extname(full).toLowerCase();
-    const filename = path.basename(full);
-    if (TEXT_EXTS.has(ext)) {
-      const extra = parseTxtProducts(fs.readFileSync(full, 'utf8'), args.category, cfg);
-      extra.forEach((r) => {
-        r.sourceNote = filename;
-        rows.push(r);
-      });
-      if (!extra.length) skipped.push(`${filename} — metin okundu ama ürün satırı çıkmadı`);
-    } else if (SKIP_DOC_EXTS.has(ext)) {
-      skipped.push(`${filename} — ${ext} okuyucu yok, atlandı`);
-    } else {
-      skipped.push(`${filename} — desteklenmeyen dosya türü`);
+  if (!prefixMode) {
+    for (const full of otherFiles) {
+      const ext = path.extname(full).toLowerCase();
+      const filename = path.basename(full);
+      if (TEXT_EXTS.has(ext)) {
+        const extra = parseTxtProducts(fs.readFileSync(full, 'utf8'), args.category, cfg);
+        extra.forEach((r) => {
+          r.sourceNote = filename;
+          r.photoIndex = r.photoIndex || 1;
+          rows.push(r);
+        });
+        if (!extra.length) skipped.push(`${filename} — metin okundu ama ürün satırı çıkmadı`);
+      } else if (SKIP_DOC_EXTS.has(ext)) {
+        skipped.push(`${filename} — ${ext} okuyucu yok, atlandı`);
+      } else {
+        skipped.push(`${filename} — desteklenmeyen dosya türü`);
+      }
     }
+  } else {
+    otherFiles.forEach((full) => {
+      skipped.push(`${path.basename(full)} — prefix modunda görsel olmayan dosya atlandı`);
+    });
   }
 
   if (!rows.length) {
@@ -360,8 +403,14 @@ async function main() {
     process.exit(1);
   }
 
+  for (const row of rows) {
+    const bySku = row.sku ? await prisma.product.findUnique({ where: { sku: row.sku } }) : null;
+    const bySlug = !bySku && row.slug ? await prisma.product.findUnique({ where: { slug: row.slug } }) : null;
+    row.existingLabel = (bySku || bySlug) ? 'mevcut' : 'yeni';
+  }
+
   console.log('\nİçe aktarma tablosu:\n');
-  printTable(rows);
+  printTable(rows, args.naming);
   console.log('');
 
   const groups = new Map();
@@ -377,6 +426,7 @@ async function main() {
       console.log(`[uyarı] "${r.filename}" paket adedi yok, ${r.packSize} kabul edildi.`);
     });
     guessed.forEach((g) => console.log(`[tahmin] ${g}`));
+    whiteMapped.forEach((g) => console.log(`[beyaz→krem] ${g}`));
     skipped.forEach((s) => console.log(`[atlandı] ${s}`));
     return;
   }
@@ -476,9 +526,10 @@ async function main() {
     const urls = [];
 
     if (photoRows.length) {
-      for (let i = 0; i < photoRows.length; i += 1) {
-        const destBase = path.join(destDir, i === 0 ? product.slug : `${product.slug}-${i + 1}`);
-        await writeSizes(photoRows[i].fullPath, destBase);
+      for (const row of photoRows) {
+        const idx = row.photoIndex || 1;
+        const destBase = path.join(destDir, idx <= 1 ? product.slug : `${product.slug}-${idx}`);
+        await writeSizes(row.fullPath, destBase);
         urls.push(`/images/products/duz-renk/${color.slug}/${path.basename(destBase)}.webp`);
       }
     } else {
@@ -545,6 +596,7 @@ async function main() {
     pricePlaceholders.forEach((p) => console.log(`    - ${p}`));
   }
   guessed.forEach((g) => console.log(`  tahmin: ${g}`));
+  whiteMapped.forEach((g) => console.log(`  beyaz→krem: ${g}`));
   skipped.forEach((s) => console.log(`  atlandı: ${s}`));
 }
 

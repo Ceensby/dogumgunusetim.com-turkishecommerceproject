@@ -97,6 +97,127 @@ function colorByKey(key) {
   return PLAIN_COLORS.find((c) => c.slug === slug) || findColorInText(key);
 }
 
+function titleFromSlug(slug) {
+  return slug
+    .split('-')
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+function abbrFromSlug(slug) {
+  const parts = slug.split('-').filter(Boolean);
+  if (!parts.length) return 'XXX';
+  if (parts.length === 1) return parts[0].slice(0, 3).toUpperCase().padEnd(3, 'X');
+  return parts.map((p) => p[0]).join('').slice(0, 3).toUpperCase().padEnd(3, 'X');
+}
+
+function hexFromSlug(slug) {
+  let h = 2166136261;
+  for (const ch of slug) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+  const hue = Math.abs(h) % 360;
+  const s = 0.42;
+  const l = 0.62;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n) => {
+    const k = (n + hue / 30) % 12;
+    const c = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * c);
+  };
+  const hex = (n) => n.toString(16).padStart(2, '0');
+  return `#${hex(f(0))}${hex(f(8))}${hex(f(4))}`.toUpperCase();
+}
+
+/** Prefix kuralı: ilk "-plastik"/"-platik" öncesi renk, sondaki rakam fotoğraf sırası. */
+export function resolvePrefixColor(token) {
+  const slug = slugify(token);
+  if (!slug) return { color: null, mappedFromWhite: false, invented: false };
+  const mappedFromWhite = slug === 'beyaz' || slug === 'white';
+  const known = mappedFromWhite
+    ? PLAIN_COLORS.find((c) => c.slug === 'krem')
+    : PLAIN_COLORS.find((c) => c.slug === slug)
+      || findColorInText(slug);
+  if (known) return { color: known, mappedFromWhite, invented: false };
+  return {
+    color: {
+      slug,
+      name: titleFromSlug(slug),
+      hexCode: hexFromSlug(slug),
+      abbr: abbrFromSlug(slug),
+      sortOrder: 80,
+      aliases: [slug],
+    },
+    mappedFromWhite: false,
+    invented: true,
+  };
+}
+
+/**
+ * <renk>-plastik-bicak.png → ana fotoğraf
+ * <renk>-plastik-bicak2.png → 2. fotoğraf
+ * Yazım: platik, bıcak, büyük harf, .jpg/.jpeg/.webp
+ */
+export function parsePrefixPlainFilename(filename, opts = {}) {
+  const categorySlug = opts.categorySlug;
+  const cfg = PLAIN_CATEGORY_CONFIG[categorySlug];
+  const normalized = slugify(filename.replace(/\.[^.]+$/, ''));
+
+  const delim = normalized.match(/^(.*?)-(plastik|platik)-(.*)$/);
+  if (!delim || !delim[1] || !delim[3]) {
+    return {
+      filename,
+      ok: false,
+      skipReason: 'prefix kuralına uymuyor (<renk>-plastik-...)',
+      photoIndex: 1,
+    };
+  }
+
+  const colorToken = delim[1];
+  let rest = delim[3];
+  let photoIndex = 1;
+  const packFromRest = parsePackSize(rest);
+  const trailing = rest.match(/^(.*?)(\d+)$/);
+  if (trailing && packFromRest == null) {
+    const n = Number(trailing[2]);
+    if (Number.isFinite(n) && n >= 1 && n < 20) {
+      photoIndex = n;
+      rest = trailing[1].replace(/-+$/, '');
+    }
+  }
+
+  const { color, mappedFromWhite, invented } = resolvePrefixColor(colorToken);
+  const packSize = packFromRest ?? cfg?.defaultPack ?? 1;
+  const variant = detectVariant(normalized, color?.slug, categorySlug);
+  const title = color ? productTitleFor(color, categorySlug, variant) : '—';
+  const skuStyle = cfg?.skuStyle || 'pack';
+  const slug = color ? productSlugForPlain(title, packSize, skuStyle) : null;
+  const sku = color && cfg ? skuForPlain(cfg, color.abbr, packSize, 1) : null;
+
+  return {
+    filename,
+    ok: true,
+    categorySlug,
+    categoryName: cfg?.name || categorySlug,
+    color,
+    colorFrom: invented ? 'invented' : mappedFromWhite ? 'beyaz→krem' : 'prefix',
+    mappedFromWhite,
+    invented,
+    variant,
+    photoIndex,
+    packSize,
+    packInferred: false,
+    productName: title,
+    slug,
+    sku,
+    unitLabel: packSize > 1 ? unitLabelFor(packSize) : cfg?.defaultPack === 1 ? 'adet' : 'paket',
+    groupKey: color ? groupKeyFor({ categorySlug, colorSlug: color.slug, variant, packSize }) : `unknown::${filename}`,
+    hasPhoto: true,
+    price: cfg?.price ?? null,
+    priceDefaulted: true,
+    normalized,
+  };
+}
+
 export function nearestColor(rgb, { maxDistance = 140 } = {}) {
   let best = null;
   let bestD = Infinity;

@@ -4,12 +4,13 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import QuantityStepper from '../common/QuantityStepper';
 import ImageWithFallback from '../common/ImageWithFallback';
 import { formatPrice } from '../../utils/formatPrice';
+import { primaryImageUrl } from '../../utils/imageUrl';
 import { useCartStore } from '../../store/cartStore';
 
 export default function CartLineItem({ item, compact }) {
   const updateItem = useCartStore((s) => s.updateItem);
   const removeItem = useCartStore((s) => s.removeItem);
-  const img = item.product?.images?.[0]?.url;
+  const img = primaryImageUrl(item.product);
   const max = item.product?.trackStock ? item.product.stock : 99;
 
   return (

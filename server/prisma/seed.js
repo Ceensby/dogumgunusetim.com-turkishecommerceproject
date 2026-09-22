@@ -80,6 +80,26 @@ async function upsertCategories() {
   return map;
 }
 
+async function migrateBeyazToKrem() {
+  const white = await prisma.color.findUnique({ where: { slug: 'beyaz' } });
+  const cream = await prisma.color.findUnique({ where: { slug: 'krem' } });
+  if (white && cream && white.id !== cream.id) {
+    const moved = await prisma.product.updateMany({
+      where: { colorId: cream.id },
+      data: { colorId: white.id },
+    });
+    await prisma.color.delete({ where: { id: cream.id } });
+    console.log(`[seed] Krem ürünleri Beyaz kaydına taşındı (${moved.count}), eski krem satırı silindi`);
+  }
+  if (white && (white.slug !== 'krem' || white.name !== 'Krem')) {
+    await prisma.color.update({
+      where: { id: white.id },
+      data: { name: 'Krem', slug: 'krem', hexCode: '#F3E9D2', sortOrder: 3, isActive: true },
+    });
+    console.log('[seed] Beyaz rengi Krem olarak güncellendi (slug krem, #F3E9D2)');
+  }
+}
+
 async function upsertColors() {
   const map = {};
   for (const color of COLORS) {
@@ -545,6 +565,7 @@ async function syncCarts() {
 async function main() {
   console.log('[seed] başlıyor');
   const categories = await upsertCategories();
+  await migrateBeyazToKrem();
   const colors = await upsertColors();
   await upsertSettings();
   await upsertAdmin();

@@ -117,7 +117,8 @@ export async function listByCategorySlug(slug, query) {
 }
 
 export async function listByColorSlug(slug, query) {
-  const color = await prisma.color.findUnique({ where: { slug } });
+  const resolved = slug === 'beyaz' ? 'krem' : slug;
+  const color = await prisma.color.findUnique({ where: { slug: resolved } });
   if (!color || !color.isActive) return null;
   const data = await listProducts({ ...query, colorId: color.id });
   return { color: serialize(color), ...data };

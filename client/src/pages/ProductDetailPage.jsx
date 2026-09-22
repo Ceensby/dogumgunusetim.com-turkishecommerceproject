@@ -94,7 +94,7 @@ export default function ProductDetailPage() {
       '@context': 'https://schema.org',
       '@type': 'Product',
       name: p.name,
-      image: p.images?.[0]?.url,
+      image: p.images?.find((img) => img.isPrimary)?.url || p.images?.[0]?.url,
       sku: p.sku,
       description: desc,
       offers: {
@@ -130,7 +130,7 @@ export default function ProductDetailPage() {
       <SeoHead
         title={p.seoTitle || p.name}
         description={p.seoDescription || desc}
-        image={p.images?.[0]?.url}
+        image={p.images?.find((img) => img.isPrimary)?.url || p.images?.[0]?.url}
         path={`/urun/${p.slug}`}
         jsonLd={jsonLd}
       />
@@ -147,7 +147,7 @@ export default function ProductDetailPage() {
       <Box sx={{ bgcolor: accent ? `${accent}14` : 'transparent', borderRadius: 4, p: { xs: 0, md: 1 } }}>
         <Grid container spacing={4}>
           <Grid item xs={12} md={6} lg={7}>
-            <ProductGallery images={p.images} name={`${p.name}, ${p.unitLabel}`} badges={badges} accent={accent} />
+            <ProductGallery key={p.id} images={p.images} name={`${p.name}, ${p.unitLabel}`} badges={badges} accent={accent} />
           </Grid>
           <Grid item xs={12} md={6} lg={5}>
             <ProductInfoPanel

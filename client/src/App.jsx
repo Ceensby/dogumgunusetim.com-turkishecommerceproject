@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Loader from './components/common/Loader';
@@ -85,6 +85,7 @@ export default function App() {
         <Route path="/urun/:slug" element={<ProductDetailPage />} />
         <Route path="/kategori/:slug" element={<CategoryPage />} />
         <Route path="/renkler" element={<ColorsPage />} />
+        <Route path="/renk/beyaz" element={<Navigate to="/renk/krem" replace />} />
         <Route path="/renk/:slug" element={<ColorDetailPage />} />
         <Route path="/arama" element={<SearchPage />} />
         <Route path="/sepet" element={<CartPage />} />

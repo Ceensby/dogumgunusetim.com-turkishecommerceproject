@@ -3,9 +3,10 @@ import { Link as RouterLink } from 'react-router-dom';
 import { Box, Button, Card, CardContent, Typography } from '@mui/material';
 import ImageWithFallback from '../common/ImageWithFallback';
 import PriceText from '../common/PriceText';
+import { primaryImageUrl } from '../../utils/imageUrl';
 
 export default function ProductCard({ product, fromTheme, compact }) {
-  const img = product.images?.[0]?.url;
+  const img = primaryImageUrl(product);
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box

@@ -3,7 +3,7 @@
 export const PLAIN_COLORS = [
   { slug: 'pembe', name: 'Pembe', hexCode: '#FF6FA5', abbr: 'PMB', sortOrder: 1, aliases: ['pembe', 'pink', 'fusya', 'fuşya'] },
   { slug: 'mavi', name: 'Mavi', hexCode: '#4DA8FF', abbr: 'MAV', sortOrder: 2, aliases: ['mavi', 'blue', 'acik-mavi', 'açık mavi'] },
-  { slug: 'beyaz', name: 'Beyaz', hexCode: '#FFFFFF', abbr: 'BYZ', sortOrder: 3, aliases: ['beyaz', 'white'] },
+  { slug: 'krem', name: 'Krem', hexCode: '#F3E9D2', abbr: 'KRE', sortOrder: 3, aliases: ['krem', 'cream', 'ivory', 'bej', 'beige', 'beyaz', 'white'] },
   { slug: 'altin', name: 'Altın', hexCode: '#E5B94E', abbr: 'ALT', sortOrder: 4, aliases: ['altin', 'altın', 'gold'] },
   { slug: 'lila', name: 'Lila', hexCode: '#C77DFF', abbr: 'LIL', sortOrder: 5, aliases: ['lila', 'lavender', 'lavanta'] },
   { slug: 'mint', name: 'Mint', hexCode: '#7BE0C0', abbr: 'MNT', sortOrder: 6, aliases: ['mint', 'mint-yesil'] },
@@ -16,8 +16,7 @@ export const PLAIN_COLORS = [
   { slug: 'gokkusagi', name: 'Gökkuşağı', hexCode: '#FF7A62', abbr: 'GKK', sortOrder: 13, aliases: ['gokkusagi', 'gökkuşağı', 'rainbow'] },
   { slug: 'sari', name: 'Sarı', hexCode: '#F5C400', abbr: 'SAR', sortOrder: 14, aliases: ['sari', 'sarı', 'yellow'] },
   { slug: 'turuncu', name: 'Turuncu', hexCode: '#FF8A1A', abbr: 'TRN', sortOrder: 15, aliases: ['turuncu', 'orange'] },
-  { slug: 'krem', name: 'Krem', hexCode: '#F0D9B5', abbr: 'KRE', sortOrder: 16, aliases: ['krem', 'cream', 'ivory', 'bej', 'beige'] },
-  { slug: 'gri', name: 'Gri', hexCode: '#9A9EA6', abbr: 'GRI', sortOrder: 17, aliases: ['gri', 'gray', 'grey'] },
+  { slug: 'gri', name: 'Gri', hexCode: '#9A9EA6', abbr: 'GRI', sortOrder: 16, aliases: ['gri', 'gray', 'grey'] },
 ];
 
 export const PLAIN_CATEGORY_CONFIG = {

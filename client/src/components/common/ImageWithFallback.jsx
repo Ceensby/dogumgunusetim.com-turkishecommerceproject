@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Box, Skeleton, Typography } from '@mui/material';
-import { imageSizes, imageSrcSet, sizedImageUrl } from '../../utils/imageUrl';
+import { imageSizes, imageSrcSet, sizedImageUrl, stripSizeToken } from '../../utils/imageUrl';
 
 function fallbackSrc(src) {
   if (!src) return null;
-  if (/\.(jpg|jpeg|png|webp)$/i.test(src)) {
-    return src.replace(/-sm\.webp$/i, '.webp').replace(/-md\.webp$/i, '.webp').replace(/\.(jpg|jpeg|png|webp)$/i, '.svg');
+  const base = stripSizeToken(src);
+  if (/\.(jpg|jpeg|png|webp)$/i.test(base)) {
+    return base.replace(/\.(jpg|jpeg|png|webp)$/i, '.svg');
   }
   return null;
 }

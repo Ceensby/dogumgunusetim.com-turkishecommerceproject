@@ -1,6 +1,6 @@
 # doğumgünüsetim.com — Proje Durumu
 
-Son güncelleme: 21 Eylül 2026. Bu dosya, projeyi hiç görmemiş birinin kaldığı yerden devam etmesi için yazıldı.
+Son güncelleme: 22 Eylül 2026. Bu dosya, projeyi hiç görmemiş birinin kaldığı yerden devam etmesi için yazıldı.
 
 Çalışma dizini: `C:\Users\cbekt\Masaüstü\dogumgunusetim.com`
 
@@ -170,9 +170,9 @@ Tema sayfasında **aktif ürünü olmayan kategori başlığı gösterilmez**. Y
 
 ### Renkler
 
-Pembe `#FF6FA5`, Mavi, Beyaz, Altın, Lila, Mint, Kırmızı, Siyah, **Gümüş** `#C0C5CA`, **Rose Gold** `#C98973`, **Mor** `#7A1FA2`, **Yeşil** `#22A34A`, **Gökkuşağı** `#FF7A62`, **Sarı** `#F5C400`, **Turuncu** `#FF8A1A`, **Krem** `#F0D9B5`, **Gri** `#9A9EA6`.
+Pembe `#FF6FA5`, Mavi, **Krem** `#F3E9D2` (eski Beyaz kaydı; slug `krem`, `/renk/beyaz` → `/renk/krem`), Altın, Lila, Mint, Kırmızı, Siyah, **Gümüş** `#C0C5CA`, **Rose Gold** `#C98973`, **Mor** `#7A1FA2`, **Yeşil** `#22A34A`, **Gökkuşağı** `#FF7A62`, **Sarı** `#F5C400`, **Turuncu** `#FF8A1A`, **Gri** `#9A9EA6`.
 
-Ürünü olanlar önce: Pembe (3), Mavi (2), Altın (2), Lila (1), Kırmızı (2), Siyah (3), Gümüş (2), Rose Gold, Mor, Yeşil (2), Gökkuşağı, Sarı, Turuncu, Krem, Gri. Ürünü olmayanlar sonda: Beyaz, Mint.
+Ürünü olanlar önce: Pembe (3), Mavi (2), Krem (1, çatal), Altın (2), Lila (1), Kırmızı (2), Siyah (3), Gümüş (2), Rose Gold, Mor, Yeşil (2), Gökkuşağı, Sarı, Turuncu, Gri. Ürünü olmayan: Mint. Beyaz satırı yok.
 
 ### Temalar
 
@@ -279,16 +279,19 @@ Script **tema odaklıdır**; düz renk için `import:plain` kullanılır.
 npm run import:plain -- --src="Parti malzemeleri/Arka Fon perde" --category=fon-perdesi --dry-run
 npm run import:plain -- --src="Parti malzemeleri/Arka Fon perde" --category=fon-perdesi
 npm run import:plain -- --src="Parti malzemeleri/Lisanssız Çatal" --category=plastik-catal
+npm run import:plain -- --src="Parti malzemeleri/Lisanssız Bıçak" --category=plastik-bicak --naming=prefix --dry-run
 ```
 
 `--category` mevcut kategori slug’ı olmalı (yeni kategori açılmaz). `--dry-run` sadece tablo basar. Orijinaller silinmez/taşınmaz. İkinci çalıştırma SKU/slug ile upsert eder.
 
+`--naming=prefix`: rengi ilk `-plastik` / `-platik` öncesinden alır (`rose-gold-plastik-bicak2.png` → Rose Gold, 2. foto). `beyaz-...` → Krem. Görselden renk tahmini **yok**.
+
 - Çıktı: `client/public/images/products/duz-renk/<renk-slug>/<ürün-slug>.webp` (+ `-md`, `-sm`), kare beyaz tuval
 - `themeId: null`, `colorId` dolu, **ThemeProduct yazılmaz**
-- Çakışan pembe ürünler (`GEN-FON-PMB-01`, `GEN-CTL-PMB-25`): yalnızca fotoğraf eklenir; fiyat ve Unicorn bağı korunur
-- Renk dosya adında yoksa `server/scripts/data/plain-file-colors.json` veya görselden dominant renk
+- Çakışan pembe ürünler (`GEN-FON-PMB-01`, `GEN-CTL-PMB-25`, `GEN-BCK-PMB-25`): yalnızca fotoğraf eklenir; fiyat ve Unicorn bağı korunur
+- Varsayılan modda renk dosya adında yoksa `plain-file-colors.json` veya görselden dominant renk
 - Fotoğraf yoksa rengin hexCode’u ile SVG yer tutucu
-- Kategori fiyatları: fon 119 TL, çatal 79 TL (dosyada fiyat yoksa)
+- Kategori fiyatları: fon 119 TL, çatal/bıçak 79 TL (dosyada fiyat yoksa)
 
 ---
 
@@ -297,13 +300,16 @@ npm run import:plain -- --src="Parti malzemeleri/Lisanssız Çatal" --category=p
 - Tam yığın: mağaza + API + admin JWT + misafir sepet + set grubu + sipariş iskeleti
 - Unicorn seed; kişi sayısına göre paket `ceil`
 - `dgtemalar` import: tabak, bardak (2 foto), peçete, kürdan; yazı fotoğrafı flama ana görseli
-- Ürün detay `/urun/:slug`: galeri, lightbox, özellik çipleri, set promo, ilgili ürünler, mobil buy bar
+- Ürün detay `/urun/:slug`: galeri (masaüstü thumbnail + 375px kaydırmalı şerit, lightbox okları), lightbox, özellik çipleri, set promo, ilgili ürünler, mobil buy bar. Ürün değişince seçili fotoğraf index’i sıfırlanır. Kart/sepet yalnızca `isPrimary`.
 - Tema hero: gerçek banner, kırpmadan `object-fit: contain` + `heroAspectRatio`; yazı/buton beyaz kartta, desktop ~40px overlap
 - Ana sayfa kartı aynı masa fotoğrafı (`thumb.webp`, `object-position: center 65%`); kartın tamamı tıklanabilir
 - İyiki doğdun → flama kuralı; yazı ürünü pasif, temadan ve sepetten çıkarıldı
 - Fiyat güncellemesi; masa örtüsü adı + Ölçü özelliği
 - Pembe Fon Perdesi düz renk ürünü (çatal/bıçak mantığı), Unicorn setine ThemeProduct ile bağlı
 - Düz renk import: Fon perdesi + plastik çatal (Arka Fon perde, Lisanssız Çatal); `/renkler` ürün sayısı; `/renk/:slug` kategori gruplu
+- **Galeri düzeltmesi:** DB/API 2+ `ProductImage` ve `-2.webp`/`-2-sm`/`-2-md` dosyaları zaten doğruydu. Md altı şeritte flex kaydırma (`flex: 0 0 100%`), tıklanır noktalar, lightbox okları, ürün değişince index sıfırlama eklendi. `sizedImageUrl` yalnızca `-sm`/`-md` ekini kırpar, `...-2.webp` sırasına dokunmaz.
+- Beyaz Color kaydı Krem’e güncellendi (`#F3E9D2`); `/renk/beyaz` yönlendirmesi
+- `import:plain --naming=prefix`: `<renk>-plastik-bicak.png` / `...2.png` (platik/bıcak, beyaz→krem). Lisanssız Bıçak klasöründeki 22 dosya bu ada uymadığı için **ürün açılmadı** (atlandı)
 - Boş kategori başlığı gizleme
 - Admin: tema/ürün/kategori/renk CRUD, tema-ürün ata + sürükle sıra, sipariş listesi, ayarlar, ürün özellikleri ekle/sil
 
@@ -328,7 +334,8 @@ Pembe çatalın gerçek fotoğrafı var (`duz-renk/pembe/`).
 - `UNI-YZI-01` ölü kayıt (pasif, görselsiz, ThemeProduct yok) — silinebilir veya ileride gerçek yazı ürünü olarak açılır
 - Balon / mum kategorileri boş
 - Düz renk fiyatları varsayılan (fon 119, çatal 79) — kontrol et
-- `Parti malzemeleri` içinde diğer klasörler (bıçak, bardak, tabak, peçete, masa örtüsü, balon) henüz import edilmedi
+- `Parti malzemeleri/Lisanssız Bıçak` 22 rastgele adlı PNG (`qwerty.png`, `adfgshtdj.png` …) — `--naming=prefix` ile atlandı. Dosyalar `<renk>-plastik-bicak.png` + `...2.png` olunca: `npm run import:plain -- --src="Parti malzemeleri/Lisanssız Bıçak" --category=plastik-bicak --naming=prefix`
+- Diğer klasörler (bardak, tabak, peçete, masa örtüsü, balon) henüz import edilmedi
 
 ### Import / görsel
 
@@ -383,7 +390,10 @@ Mağaza bu oturumda Vite 5174’te de açılabilir; varsayılan 5173.
 - http://localhost:5173/renk/mavi
 - http://localhost:5173/renk/altin
 - http://localhost:5173/renk/siyah
-- http://localhost:5173/urun/unicorn-flama
+- http://localhost:5173/renk/krem
+- http://localhost:5173/renk/beyaz (krem’e yönlenir)
+- http://localhost:5173/urun/unicorn-karton-bardak-8li (2 foto, galeri)
+- http://localhost:5173/urun/altin-metalik-fon-perdesi (2 foto, galeri)
 - http://localhost:5173/urun/pembe-fon-perdesi
 - http://localhost:5173/urun/pembe-renk-plastik-catal-25li
 - http://localhost:5173/urun/mavi-fon-perdesi
